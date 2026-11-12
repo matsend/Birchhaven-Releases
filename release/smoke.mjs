@@ -1,10 +1,19 @@
+import http from 'node:http';
 import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {spawn,execFileSync} from 'node:child_process';import {pathToFileURL} from 'node:url';
 const root=path.resolve(process.argv[2]);if(!root||fs.existsSync(path.join(root,'birchhaven-solo-data')))throw Error('Smoke tests require a fresh disposable runtime');
 const origin='http://localhost:8787',version=JSON.parse(fs.readFileSync(path.join(root,'update-version.json'))).version;
 let child,cookie='',savedMap;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function request(route,data){const r=await fetch(origin+route,{method:data?'POST':'GET',headers:{Origin:origin,Cookie:cookie,...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{}),signal:AbortSignal.timeout(15000)});const c=r.headers.get('set-cookie');if(c)cookie=c.split(';')[0];const body=await r.json();assert.equal(r.status,200,JSON.stringify(body));return body;}
-async function start(){child=spawn(process.execPath,['Birchhaven-Launcher.mjs','--no-open'],{cwd:root,stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>process.stdout.write(d));child.stderr.on('data',d=>process.stderr.write(d));for(let i=0;i<120;i++){if(child.exitCode!==null)throw Error('Runtime exited');try{const r=await fetch(origin+'/version.js',{signal:AbortSignal.timeout(500)});if(r.ok&&(await r.text()).includes('"version":"'+version+'"'))return;}catch{}await sleep(1000);}throw Error('Runtime startup timeout');}
+// A fresh IPv4 loopback connection per check avoids retaining a timed-out startup
+// socket on Windows. Keep the actual localhost Host/Origin and session cookie.
+function localHttp(route,data,timeout=60000){return new Promise((resolve,reject)=>{
+ const body=data===undefined?null:JSON.stringify(data),req=http.request(origin+route,{family:4,agent:false,method:body===null?'GET':'POST',headers:{Origin:origin,Cookie:cookie,...(body===null?{}:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)})}},res=>{
+  let bytes=0,chunks=[];res.on('data',chunk=>{bytes+=chunk.length;if(bytes>3000000)req.destroy(Error('Response too large: '+route));else chunks.push(chunk);});
+  res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,text:Buffer.concat(chunks).toString('utf8')}));res.on('error',reject);
+ });req.setTimeout(timeout,()=>req.destroy(Error('Local check timed out: '+route)));req.on('error',reject);req.end(body);
+});}
+async function request(route,data){console.log('CHECK '+(data===undefined?'GET ':'POST ')+route);const start=Date.now(),r=await localHttp(route,data);const c=r.headers['set-cookie']?.[0];if(c)cookie=c.split(';')[0];const body=JSON.parse(r.text);assert.equal(r.status,200,JSON.stringify(body));console.log('OK '+route+' '+(Date.now()-start)+'ms');return body;}
+async function start(){child=spawn(process.execPath,['Birchhaven-Launcher.mjs','--no-open'],{cwd:root,stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>process.stdout.write(d));child.stderr.on('data',d=>process.stderr.write(d));for(let i=0;i<120;i++){if(child.exitCode!==null)throw Error('Runtime exited');try{const r=await localHttp('/version.js',undefined,1500);if(r.status===200&&r.text.includes('"version":"'+version+'"'))return;}catch{}await sleep(1000);}throw Error('Runtime startup timeout');}
 async function stop(){if(!child||child.exitCode!==null)return;if(process.platform==='win32')execFileSync('taskkill.exe',['/PID',String(child.pid),'/T','/F']);else child.kill('SIGTERM');for(let i=0;i<150&&child.exitCode===null;i++)await sleep(100);if(child.exitCode===null)throw Error('Runtime did not stop');child=null;}
 try{
  await start();await request('/api/player/local-session',{});
