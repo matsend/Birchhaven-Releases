@@ -12,14 +12,15 @@ function localHttp(route,data,timeout=60000){return new Promise((resolve,reject)
   res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,text:Buffer.concat(chunks).toString('utf8')}));res.on('error',reject);
  });req.setTimeout(timeout,()=>req.destroy(Error('Local check timed out: '+route)));req.on('error',reject);req.end(body);
 });}
-async function request(route,data){console.log('CHECK '+(data===undefined?'GET ':'POST ')+route);const start=Date.now(),r=await localHttp(route,data);const c=r.headers['set-cookie']?.[0];if(c)cookie=c.split(';')[0];const body=JSON.parse(r.text);assert.equal(r.status,200,JSON.stringify(body));console.log('OK '+route+' '+(Date.now()-start)+'ms');return body;}
+async function request(route,data){console.log('CHECK '+(data===undefined?'GET ':'POST ')+route);const start=Date.now(),r=await localHttp(route,data);const c=r.headers['set-cookie']?.[0];if(c)cookie=c.split(';')[0];assert.equal(r.status,200,route+': '+r.text.replace(/[a-f0-9]{64}/gi,'[redacted]').slice(0,800));const body=JSON.parse(r.text);console.log('OK '+route+' '+(Date.now()-start)+'ms');return body;}
 async function start(){child=spawn(process.execPath,['Birchhaven-Launcher.mjs','--no-open'],{cwd:root,stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>process.stdout.write(d));child.stderr.on('data',d=>process.stderr.write(d));for(let i=0;i<120;i++){if(child.exitCode!==null)throw Error('Runtime exited');try{const r=await localHttp('/version.js',undefined,1500);if(r.status===200&&r.text.includes('"version":"'+version+'"'))return;}catch{}await sleep(1000);}throw Error('Runtime startup timeout');}
-async function stop(){if(!child||child.exitCode!==null)return;if(process.platform==='win32')execFileSync('taskkill.exe',['/PID',String(child.pid),'/T','/F']);else child.kill('SIGTERM');for(let i=0;i<150&&child.exitCode===null;i++)await sleep(100);if(child.exitCode===null)throw Error('Runtime did not stop');child=null;}
+async function stop(){if(!child||child.exitCode!==null)return;let killError;if(process.platform==='win32'){try{execFileSync('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{stdio:'pipe'});}catch(error){killError=error;}}else child.kill('SIGTERM');for(let i=0;i<150&&child.exitCode===null;i++)await sleep(100);if(child.exitCode===null)throw killError||Error('Runtime did not stop');child=null;}
 try{
  await start();
  assert.equal((await request('/api/world/session')).canEdit,false);
  await request('/api/player/local-session',{});
- await request('/api/player/local-session',{});
+ const initialCookie=cookie;assert.ok(initialCookie);
+ for(let attempt=0;attempt<12;attempt++){await request('/api/player/local-session',{});assert.equal(cookie,initialCookie,'Local session must be reused');}
  assert.ok((await request('/api/player/session')).account);
  assert.equal((await request('/api/world/session')).canEdit,true);
  const published=await request('/api/world/published');savedMap=published.data;
@@ -31,4 +32,4 @@ try{
  assert.equal((await request('/api/player/characters')).data.characters[0].gold,42);
  assert.equal((await request('/api/world/release-status')).pending,false);assert.ok((await request('/api/world/history')).versions.some(v=>v.author==='local-map-release:'+mapVersion&&v.kind==='published'));
  console.log('PASS: runtime '+version+', Creator local save, map delivery and character persistence after restart.');
-}finally{await stop();}
+}catch(error){console.error('SMOKE FAILURE:',error);throw error;}finally{await stop();}
