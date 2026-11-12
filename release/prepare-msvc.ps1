@@ -28,6 +28,7 @@ Copyright Microsoft Corporation. All rights reserved.
 These unmodified redistributable binaries are deployed app-locally from the
 licensed Visual Studio installation on the Windows build runner.
 Redistribution list and terms:
+https://learn.microsoft.com/visualstudio/releases/2022/redistribution
 https://learn.microsoft.com/visualstudio/releases/2026/redistribution
 https://visualstudio.microsoft.com/license-terms/
 Deployment reference:
