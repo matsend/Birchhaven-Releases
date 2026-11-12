@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "version": "7.22.0",
-  "name": "Eight Directions",
+  "version": "7.22.1",
+  "name": "Steady Sessions",
   "baseVersion": "7.20.0",
   "baseSha256": "11750d08d2bc591a489c31b8386dd6a73aa7c2f6f5b5dcbd3503d439137f1682",
-  "runtimeSha256": "df6354fc53ea47def4d2170d0fe0326733ec77dbe474d60a0b6491ae902cb4eb",
-  "patch": "release/patches/7.22.0.json",
-  "patchSha256": "33e5d1e250c37c2c6e404da003e8fafdd873c95d1c2761ab8abaa7069e7a6c37",
-  "notes": "All live monster families can stand facing all eight directions, with 124 new diagonal poses. Facing survives fresh monster snapshots and stays stable when a creature stops. Corrected the Orc Tower beastmaster west-facing view; original sizes, combat and collision are preserved."
+  "runtimeSha256": "9a6b2dbe0c39159eb3f278f66eb75805da6d9d7a748484638d60edbc9ef41eb7",
+  "patch": "release/patches/7.22.1.json",
+  "patchSha256": "6d6d0d4b4841d19a2b715a367c8fe44150a13cc300829f1ec6a310f186e9d059",
+  "notes": "Local session requests read their complete bounded request body before replying, preventing dropped Windows connections. Keeps World Creator access, existing character saves and all eight-direction monster artwork from 7.22.0."
 }

@@ -9,7 +9,7 @@ on:
     paths: ['release-request.json']
 concurrency:
   group: birchhaven-release-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 jobs:
@@ -51,11 +51,9 @@ jobs:
           Expand-Archive -LiteralPath $archive -DestinationPath smoke
           npm ci --prefix smoke/Birchhaven-Singleplayer --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Diagnose Windows proxy failure (temporary, not release verification)
-        run: node release/diagnose-windows.mjs smoke/Birchhaven-Singleplayer
       - run: node release/smoke.mjs smoke/Birchhaven-Singleplayer
   publish:
-    if: false # Diagnostic run must never publish, including on main.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [build, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 15
