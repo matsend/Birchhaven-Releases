@@ -65,7 +65,7 @@ async function startGame(){
   game.webContents.on('before-input-event',(event,input)=>{if(input.type==='keyDown'&&input.key==='F11'){event.preventDefault();game.setFullScreen(!game.isFullScreen());}});
   game.on('close',event=>{if(!canQuit){event.preventDefault();void closeClient();}});
   game.webContents.on('render-process-gone',()=>{playing=false;showSetup();publish('error','Spelfönstret slutade svara. Spelprocessen hålls igång för att skydda sparningen.');});
-  await loadGameWindow(game);if(!child)throw Error('Spelprocessen stängdes under starten.');playing=true;game.show();setup?.hide();
+  await loadGameWindow(game);if(!child)throw Error('Spelprocessen stängdes under starten.');playing=true;game.show();setup?.hide();game.focus();publish('playing','Birchhaven körs.');
  }catch(error){if(game&&!playing&&!game.isDestroyed())game.destroy();publish('error',error.message);if(child&&!playing)await stopHost().catch(()=>{});}
  finally{launching=false;}
 }

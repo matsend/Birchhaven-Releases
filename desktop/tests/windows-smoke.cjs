@@ -22,6 +22,7 @@ async function play(setup){
  if(!game)throw Error('The installed game window did not open within 180 seconds');
  await game.waitForURL('http://localhost:8787/**',{timeout:180000});
  game.on('pageerror',e=>errors.push(e.message));
+ for(let i=0;i<240;i++){const shown=await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().some(w=>w.webContents.getURL().startsWith('http://localhost:8787')&&w.isVisible()));if(shown)break;if(i===239)throw Error('Game window never became visible');await new Promise(r=>setTimeout(r,500));}
  await game.locator('#createcharacter').waitFor({state:'visible',timeout:180000});
  await game.waitForFunction(()=>typeof window.flushPlayerAccount==='function'&&window.BIRCHHAVEN_SINGLEPLAYER===true);
  assert.equal(await game.evaluate(()=>window.birchhavenDesktop&&typeof window.birchhavenDesktop.update),'function');
@@ -42,7 +43,10 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  await game.locator('#welcome').waitFor({state:'hidden',timeout:30000});
  await game.waitForFunction(()=>document.getElementById('charactername').textContent==='Desktop Tester');
  await game.screenshot({path:path.join(screenshotDir,'windows-client-game.png')});
- await game.keyboard.press('F11');await game.waitForTimeout(500);assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787')).isFullScreen()),true);await game.keyboard.press('F11');
+ for(const expected of [true,false]){
+  await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.focus();w.webContents.sendInputEvent({type:'keyDown',keyCode:'F11'});w.webContents.sendInputEvent({type:'keyUp',keyCode:'F11'});});
+  let actual;for(let i=0;i<40;i++){actual=await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787')).isFullScreen());if(actual===expected)break;await new Promise(r=>setTimeout(r,250));}assert.equal(actual,expected,'F11 must toggle the native game window');
+ }
  console.log('SAVE and close through the actual window lifecycle');await close();
  const state=path.join(data,'game/birchhaven-solo-data');assert(fs.existsSync(path.join(state,'v3/d1')));fs.mkdirSync(old,{recursive:true});fs.cpSync(state,path.join(old,'birchhaven-solo-data'),{recursive:true});
  console.log('REINSTALL client; saved characters must survive');installClient();setup=await launch();await play(setup);let saved=await roster();assert(saved.characters.some(c=>c.name==='Desktop Tester'));await close();
