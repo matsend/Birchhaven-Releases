@@ -7,3 +7,5 @@ for(const [name,pin] of Object.entries(pins)){
  if(name==='node'){const extracted=path.join('output/node',`node-v${pin.version}-win-x64`);for(const n of ['node.exe','LICENSE'])fs.copyFileSync(path.join(extracted,n),path.join('output/node',n));fs.rmSync(extracted,{recursive:true});}
  fs.unlinkSync(file);
 }
+
+execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File','release/prepare-msvc.ps1'],{stdio:'inherit'});
