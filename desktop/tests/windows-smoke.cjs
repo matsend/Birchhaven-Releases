@@ -11,8 +11,16 @@ async function launch(){
  await setup.locator('#start:not([disabled])').waitFor({timeout:180000});return setup;
 }
 async function play(setup){
- const window=app.waitForEvent('window',{timeout:180000});
- await setup.locator('#start').click();game=await Promise.race([window,setup.waitForFunction(async()=> (await globalThis.birchhavenClient.getState()).phase==='error',{},{timeout:180000}).then(async()=>{throw Error('Client startup: '+await setup.locator('#message').innerText());})]);await game.waitForURL('http://localhost:8787/**',{timeout:180000});
+ await setup.locator('#start').click();game=null;
+ for(let attempt=0;attempt<360;attempt++){
+  game=app.windows().find(p=>p!==setup&&p.url().startsWith('http://localhost:8787'));
+  if(game)break;
+  const state=await setup.evaluate(()=>globalThis.birchhavenClient.getState());
+  if(state.phase==='error')throw Error('Client startup: '+state.message);
+  await new Promise(r=>setTimeout(r,500));
+ }
+ if(!game)throw Error('The installed game window did not open within 180 seconds');
+ await game.waitForURL('http://localhost:8787/**',{timeout:180000});
  game.on('pageerror',e=>errors.push(e.message));
  await game.locator('#createcharacter').waitFor({state:'visible',timeout:180000});
  await game.waitForFunction(()=>typeof window.flushPlayerAccount==='function'&&window.BIRCHHAVEN_SINGLEPLAYER===true);
