@@ -1,0 +1,33 @@
+{
+  "format": 2,
+  "version": "7.22.2",
+  "size": 607889,
+  "sha256": "37a9fe908e7c794fc312ce0c6e6e2e6da3e01a4354f69d933efc63a7f644e091",
+  "parts": [
+    {
+      "name": "7.22.2.part-001",
+      "size": 131072,
+      "sha256": "11fedf385372c32a6fb83800aaa0f587decf793df78bc8c2212c11ac28936948"
+    },
+    {
+      "name": "7.22.2.part-002",
+      "size": 131072,
+      "sha256": "157fa1723b6ebe653544eda1b35cf655afb2a7bade0e594e56d05180dea5766a"
+    },
+    {
+      "name": "7.22.2.part-003",
+      "size": 131072,
+      "sha256": "cd3679bd378bf70957bdd2a34cc104c5b23c643d6e8b5088e6aa2b76660bdbd8"
+    },
+    {
+      "name": "7.22.2.part-004",
+      "size": 131072,
+      "sha256": "5abaefcc81e96e409f1d6f2aaf5242c9de66ea12c4162d565f084831ffefb045"
+    },
+    {
+      "name": "7.22.2.part-005",
+      "size": 83601,
+      "sha256": "96cbd2718d285582f6e12c9be827f86774dc8e099175fdafb46e575c0b2b9aeb"
+    }
+  ]
+}

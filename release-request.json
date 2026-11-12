@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "version": "7.22.1",
-  "name": "Steady Sessions",
-  "baseVersion": "7.20.0",
-  "baseSha256": "11750d08d2bc591a489c31b8386dd6a73aa7c2f6f5b5dcbd3503d439137f1682",
-  "runtimeSha256": "9a6b2dbe0c39159eb3f278f66eb75805da6d9d7a748484638d60edbc9ef41eb7",
-  "patch": "release/patches/7.22.1.json",
-  "patchSha256": "6d6d0d4b4841d19a2b715a367c8fe44150a13cc300829f1ec6a310f186e9d059",
-  "notes": "Local session requests read their complete bounded request body before replying, preventing dropped Windows connections. Keeps World Creator access, existing character saves and all eight-direction monster artwork from 7.22.0."
+  "version": "7.22.2",
+  "name": "Single Score",
+  "baseVersion": "7.22.1",
+  "baseSha256": "92e0db12ea3fb7fd2c23ed08c574df0fe5ab51e0f7d87813ae5a92c28e431653",
+  "runtimeSha256": "b8053ee5f8c0397dbfee6fa534566a3fc6dcd7d53ce9268dae30abcc798eb116",
+  "patch": "release/patches/7.22.2.json",
+  "patchSha256": "3ac5c4163f9b82a7c49275b0ffcc739c9f4f664635c3bb3885e82032f1c5d101",
+  "notes": "Area music fades out and stops before the next track starts, including rapid travel and repeated music toggles. Orc Island uses its dedicated theme throughout the island; the blacksmith keeps normal town music. Returning from a hidden tab or the character screen resumes one music track. Added reproducible normal-loot gear and XP comparisons checked against client and server formulas. Existing combat balance, items and character progression are unchanged."
 }
