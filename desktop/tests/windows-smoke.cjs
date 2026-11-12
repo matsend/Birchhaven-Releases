@@ -4,7 +4,7 @@ const repo=path.resolve(__dirname,'../..'),temp=path.join(process.env.RUNNER_TEM
 const version=require('../package.json').version,installer=path.join(repo,'output/desktop',`Birchhaven-Setup-${version}-x64.exe`),exe=path.join(install,'Birchhaven.exe');
 fs.mkdirSync(temp,{recursive:true});const screenshotDir=path.join(repo,'output/desktop-evidence');fs.mkdirSync(screenshotDir,{recursive:true});
 let app,game,testFailed=false;const errors=[];
-function installClient(){execFileSync(installer,['/S','/D='+install],{timeout:180000,stdio:'inherit'});assert(fs.existsSync(exe),'Installer must create Birchhaven.exe');}
+function installClient(){execFileSync(installer,['/S','/D='+install],{timeout:180000,stdio:'inherit'});assert(fs.existsSync(exe),'Installer must create Birchhaven.exe');for(const name of ['node/node.exe','runtime/node_modules/wrangler/bin/wrangler.js','runtime/node_modules/@cloudflare/workerd-windows-64/bin/workerd.exe'])assert(fs.existsSync(path.join(install,'resources',name)),'Installed runtime missing '+name);}
 async function launch(){
  app=await electron.launch({executablePath:exe,env:{...process.env,CI:'true',BIRCHHAVEN_TEST_USER_DATA:data},timeout:60000});
  const setup=await app.firstWindow();setup.on('pageerror',e=>errors.push(e.message));

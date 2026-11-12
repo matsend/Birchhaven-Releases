@@ -37,6 +37,13 @@
         ]
       },
       {
+        "from": "../output/Birchhaven-Singleplayer/node_modules",
+        "to": "runtime/node_modules",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
         "from": "../output/node",
         "to": "node"
       }
