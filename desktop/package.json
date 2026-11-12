@@ -1,0 +1,69 @@
+{
+  "name": "birchhaven-desktop",
+  "productName": "Birchhaven",
+  "version": "7.23.0",
+  "description": "Birchhaven Windows client",
+  "author": "Birchhaven",
+  "private": true,
+  "main": "main.cjs",
+  "devDependencies": {
+    "electron": "45.3.1",
+    "electron-builder": "26.18.0",
+    "playwright": "1.58.2"
+  },
+  "build": {
+    "appId": "se.birchhaven.desktop",
+    "productName": "Birchhaven",
+    "asar": false,
+    "directories": {
+      "output": "../output/desktop"
+    },
+    "files": [
+      "*.cjs",
+      "*.mjs",
+      "ui/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../output/Birchhaven-Singleplayer",
+        "to": "runtime",
+        "filter": [
+          "**/*",
+          "!birchhaven-solo-data{,/**/*}",
+          "!birchhaven-solo-data-backups{,/**/*}",
+          "!birchhaven-solo-data.lock",
+          "!.birchhaven-update{,/**/*}"
+        ]
+      },
+      {
+        "from": "../output/node",
+        "to": "node"
+      }
+    ],
+    "electronDist": "../output/electron",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "ui/icon.ico",
+      "artifactName": "Birchhaven-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Birchhaven",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    }
+  }
+}

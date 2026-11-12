@@ -1,22 +1,33 @@
-# Birchhaven – Singleplayer
+# Birchhaven – Windows-klienten
 
-Hämta installationspaketet under [Releases](https://github.com/matsend/Birchhaven-Releases/releases/latest).
+**[Hämta Windows-klienten](https://github.com/matsend/Birchhaven-Releases/releases/latest)**
 
-1. Installera Node.js 24 om det saknas.
-2. Packa upp `Birchhaven-Singleplayer-<version>.zip`.
-3. Kör `Install-Birchhaven.cmd` första gången.
-4. Starta med `Start-Birchhaven.cmd`.
+1. Hämta `Birchhaven-Setup-7.23.0-x64.exe` under Assets.
+2. Kör installationen.
+3. Starta **Birchhaven** från skrivbordet eller Start-menyn.
 
-Spelet körs lokalt i webbläsaren. Framtida publicerade versioner hämtas via **Sök efter uppdateringar** i spelet. Behåll `birchhaven-solo-data` och dess säkerhetskopior.
+Spelet körs i ett eget programfönster. Spelmotor och Node ingår. F11 växlar helskärm. Windows 10/11 x64. Installationsfilen är inte kodsignerad; Windows kan visa okänd utgivare.
 
-## World Creator från 7.21.0
+## Fortsätt med din gamla sparning
 
-**Spara och synka** sparar kartan lokalt och skickar kartändringarna till ägarens privata kartlagring. Vid första användningen behövs ChatGPT-inloggning. Kartöverföringen innehåller inte karaktärer eller deras framsteg. Spelet går att spela utan internet; synkning och uppdateringar kräver anslutning.
+Stäng den gamla starten. I klientens startfönster klickar du **Ta över gammal sparning** och väljer mappen med `Start-Birchhaven.cmd`. Karaktärer, utrustning och kartor kopieras. Den gamla mappen ändras inte. Har du redan en sparning i klienten säkerhetskopieras den före importen.
 
-När kartan är synkad ber ägaren Work om en ny speluppdatering. Den byggs och publiceras här och installeras sedan med spelets uppdateringsknapp.
+Sparningar och säkerhetskopior finns separat under `%APPDATA%\Birchhaven`. Avinstallation tar inte bort dem. Behåll ändå dina gamla sparningar tills du har kontrollerat karaktärerna i klienten.
+
+## Uppdateringar
+
+Välj **Sök efter uppdateringar** i spelets inställningar. Klienten hämtar nästa Windows-installation, kontrollerar filens kontrollsumma och sparar/stänger spelet innan installationen startas. Sparningarna behålls. World Creator ska sparas och stängas före uppdatering eller avslut.
+
+`.bhupdate` och `birchhaven-update.json` är kompatibilitetsfiler för den äldre webbläsarstarten, inte installationsfiler. Den gamla starten konverteras genom att installera Windows-klienten ovan.
+
+## Innehåll
+
+7.23.0 innehåller det publicerade spelinnehållet från 7.22.2 och den nya Windows-klienten. Expansionen 8.0.0 med nya set, föremål och uppdrag är fortfarande en separat, opublicerad arbetsversion.
+
+World Creator **Spara och synka** finns kvar. Spel och lokala sparningar fungerar utan internet; synkning och uppdateringar kräver internet. Kartöverföringen innehåller inte karaktärernas framsteg.
 
 ## Publicering
 
-Ägaren har godkänt GitHub Actions-flödet. Det startas genom en färdig `release-request.json` på `main` eller manuellt i Actions. Bygget kontrollerar filernas hashvärden. Ett separat Windows-test måste klara start, kartlagring, kartuppdatering och karaktärssparning innan en ny release publiceras. Befintliga releaser ersätts inte.
+GitHub Actions bygger från hashkontrollerade distributionsfiler och officiella Electron/Node-versioner. Installation, eget spelfönster, sparning, omstart, ominstallation, import och kartlagring testas på Windows innan en release kan publiceras. En misslyckad kontroll blockerar publicering.
 
-Detta repo innehåller distributionsfiler och byggverktyg. Lägg aldrig upp sparfiler, säkerhetskopior, inloggningsuppgifter eller åtkomstnycklar.
+Detta repo innehåller distribution och klientens byggverktyg. Lägg aldrig upp sparfiler, säkerhetskopior, inloggningsuppgifter eller åtkomstnycklar.
