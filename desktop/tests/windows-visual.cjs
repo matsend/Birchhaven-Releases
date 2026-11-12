@@ -9,8 +9,10 @@ let app,game;const errors=[];
  const setup=await app.firstWindow();await setup.locator('#start:not([disabled])').waitFor({timeout:180000});await setup.locator('#start').click();
  for(let i=0;i<360;i++){game=app.windows().find(p=>p!==setup&&p.url().startsWith('http://localhost:8787'));if(game)break;await new Promise(r=>setTimeout(r,500));}
  assert(game,'Native game window must open');game.on('pageerror',e=>errors.push(e.message));
+ for(let i=0;i<360;i++){if(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().some(w=>w.webContents.getURL().startsWith('http://localhost:8787')&&w.isVisible())))break;if(i===359)throw Error('Native game window did not become visible');await new Promise(r=>setTimeout(r,500));}
+ await game.waitForFunction(()=>window.BIRCHHAVEN_SINGLEPLAYER===true&&typeof window.flushPlayerAccount==='function');
  await game.locator('#createcharacter').waitFor({timeout:180000});await game.locator('#createcharacter').click();await game.locator('#heroname').fill('Visual Tester');await game.locator('#begin').click();
- await game.waitForFunction(()=>document.getElementById('welcome').hidden&&document.getElementById('world-loading').hidden&&document.getElementById('game').width>300&&document.getElementById('game').height>200,{},{timeout:180000});
+ await game.waitForFunction(()=>document.getElementById('welcome')?.hidden===true&&document.getElementById('world-loading')?.hidden===true&&document.getElementById('game')?.width>300&&document.getElementById('game')?.height>200,{},{timeout:180000});
  await game.waitForFunction(()=>{const c=document.getElementById('game'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let colors=new Set();for(let i=0;i<d.length;i+=256)if(d[i+3])colors.add((d[i]>>3)+','+(d[i+1]>>3)+','+(d[i+2]>>3));return colors.size>100;},{},{timeout:60000});
  await game.screenshot({path:path.join(out,'rendered-map.png')});
  const before=await game.locator('#coords').textContent();let after=before;
