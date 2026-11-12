@@ -1,11 +1,11 @@
 {
-  "format": 1,
-  "version": "7.21.0",
-  "name": "Connected Worlds",
-  "baseVersion": "7.20.0",
-  "baseSha256": "11750d08d2bc591a489c31b8386dd6a73aa7c2f6f5b5dcbd3503d439137f1682",
-  "runtimeSha256": "bc5a5f05a660b775f915b7a567841a21a1d0ab1a4bb9864e33993a399667f939",
-  "patch": "release/patches/7.21.0.json",
-  "patchSha256": "570234c2796b6c09859ed7791242122750162427c0fdbcb22722baaa66a5330f",
-  "notes": "World Creator saves locally and syncs maps to private online storage. Versioned map updates preserve newer local edits and character saves. Includes 7.20.1 update recovery fixes. Windows startup and saving are tested by the publishing workflow before release."
+    "format": 1,
+    "version": "7.21.0",
+    "name": "Connected Worlds",
+    "baseVersion": "7.20.0",
+    "baseSha256": "11750d08d2bc591a489c31b8386dd6a73aa7c2f6f5b5dcbd3503d439137f1682",
+    "runtimeSha256": "bc5a5f05a660b775f915b7a567841a21a1d0ab1a4bb9864e33993a399667f939",
+    "patch": "release/patches/7.21.0.json",
+    "patchSha256": "570234c2796b6c09859ed7791242122750162427c0fdbcb22722baaa66a5330f",
+    "notes": "World Creator saves locally and syncs maps to private online storage. Versioned map updates preserve newer local edits and character saves. Includes 7.20.1 update recovery fixes. Windows startup and saving are tested by the publishing workflow before release."
 }
