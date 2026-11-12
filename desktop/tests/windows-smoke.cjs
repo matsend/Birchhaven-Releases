@@ -19,7 +19,7 @@ async function play(setup){
  assert.equal(await game.evaluate(()=>window.birchhavenDesktop&&typeof window.birchhavenDesktop.update),'function');
  assert.equal(await game.evaluate(()=>typeof require),'undefined');
  assert.equal(await game.evaluate(()=>typeof process),'undefined');
- console.log(execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-File',path.join(repo,'release/assert-bundled-runtime.ps1'),'-DataRoot',data],{encoding:'utf8'}).trim());
+ console.log(execFileSync('pwsh.exe',['-NoProfile','-NonInteractive','-File',path.join(repo,'release/assert-bundled-runtime.ps1'),'-DataRoot',data],{encoding:'utf8'}).trim());
 }
 async function close(){
  const done=app.waitForEvent('close',{timeout:180000});
