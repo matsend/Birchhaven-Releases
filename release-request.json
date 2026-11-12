@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "version": "7.23.0",
-  "name": "Windows Hearth",
+  "version": "7.23.1",
+  "name": "Clear View",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "04a037a565b26a9f3d2a968950070e0d354eb4c78b3bb4122252a920301385ae",
-  "patch": "release/patches/7.23.0.json",
-  "patchSha256": "6065c6ef4e8b8901f4c5add6853705c8928823c510aea83d7aa7e2ff46ae4fe6",
-  "notes": "## Windows-klienten\n\nHämta **Birchhaven-Setup-7.23.0-x64.exe** nedan. Installera och starta Birchhaven från skrivbordet. Ingen separat Node-installation behövs. Spelet öppnas i ett eget programfönster. F11 ger helskärm.\n\n**Har du spelat tidigare?** Stäng den gamla starten. I klientens startfönster väljer du **Ta över gammal sparning** och mappen med Start-Birchhaven.cmd. Karaktärer, utrustning och kartor kopieras; originalet lämnas kvar.\n\nUppdateringsknappen i spelets inställningar hämtar kommande klientinstallationer. Sparningar och säkerhetskopior ligger separat under %APPDATA%\\Birchhaven.\n\nDen här utgåvan innehåller spelinnehållet från 7.22.2. Innehållsexpansionen 8.0.0 med nya set och föremål är fortfarande en separat, opublicerad arbetsversion.\n\nInstallationsfilen är inte kodsignerad. Windows kan därför visa en varning om okänd utgivare. Stöder Windows 10/11 x64. Filerna .bhupdate och birchhaven-update.json är endast kompatibilitetsfiler för den äldre uppdateraren; de ska inte startas manuellt."
+  "runtimeSha256": "5e35c711615d69b2e11206fe908ff1709d757d9ebcb1623010556c65b8b4ec77",
+  "patch": "release/patches/7.23.1.json",
+  "patchSha256": "a674b0cfd20c25218f7fbcff0d5f69a8b06ac5fe077bc0d7e011c55d75f682e8",
+  "notes": "## Upplösning och bildskärm\n\nVälj upplösning och gränssnittsstorlek i startfönstret eller spelets inställningar. F10 öppnar bildinställningarna, F11 växlar helskärm. Bekräfta med Behåll inom 15 sekunder; annars återställs föregående läge. Inställningarna sparas till nästa start. Helskärm använder skärmens ordinarie upplösning.\n\n## Windows-klienten\n\nHämta **Birchhaven-Setup-7.23.1-x64.exe** nedan. Installera och starta Birchhaven från skrivbordet. Ingen separat Node-installation behövs. Spelet öppnas i ett eget programfönster. F11 ger helskärm.\n\n**Har du spelat tidigare?** Stäng den gamla starten. I klientens startfönster väljer du **Ta över gammal sparning** och mappen med Start-Birchhaven.cmd. Karaktärer, utrustning och kartor kopieras; originalet lämnas kvar.\n\nUppdateringsknappen i spelets inställningar hämtar kommande klientinstallationer. Sparningar och säkerhetskopior ligger separat under %APPDATA%\\Birchhaven.\n\nDen här utgåvan innehåller spelinnehållet från 7.22.2. Innehållsexpansionen 8.0.0 med nya set och föremål är fortfarande en separat, opublicerad arbetsversion.\n\nInstallationsfilen är inte kodsignerad. Windows kan därför visa en varning om okänd utgivare. Stöder Windows 10/11 x64. Filerna .bhupdate och birchhaven-update.json är endast kompatibilitetsfiler för den äldre uppdateraren; de ska inte startas manuellt."
 }

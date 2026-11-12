@@ -1,29 +1,31 @@
 'use strict';
-const {app,BrowserWindow,Menu,dialog,ipcMain,shell}=require('electron');
+const {app,BrowserWindow,Menu,dialog,ipcMain,shell,screen}=require('electron');
 const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process'),{pathToFileURL}=require('node:url');
 const {GAME_ORIGIN,validateInstallation,assertPortsFree,isGameURL,isSyncURL,isExternalURL,updaterStatus,SAVE_SCRIPT,writeSettings,loadGameWindow}=require('./core.cjs');
 const {provision,importSave}=require('./install.cjs');
 const {checkUpdate,downloadInstaller}=require('./update.cjs');
+const {createDisplay}=require('./display.cjs');
 app.setName('Birchhaven');
 if(process.env.CI==='true'&&process.env.BIRCHHAVEN_TEST_USER_DATA)app.setPath('userData',path.resolve(process.env.BIRCHHAVEN_TEST_USER_DATA));app.setAppUserModelId('se.birchhaven.desktop');
 let setup,game,child,childExit,installation='',launching=false,closing=false,canQuit=false,playing=false,shutdownPromise;
-let updating=false,pendingInstaller=null;
+let updating=false,pendingInstaller=null,displayWindow,display;
 let state={phase:'preparing',message:'Förbereder dina spelfiler…',installation:''};
 const setupURL=pathToFileURL(path.join(__dirname,'ui/index.html')).href;
+const displayURL=pathToFileURL(path.join(__dirname,'ui/display.html')).href;
 const security={nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,webviewTag:false,allowRunningInsecureContent:false};
 const settingsFile=()=>path.join(app.getPath('userData'),'desktop-settings.json');
 function publish(phase,message){state={phase,message,installation};if(setup&&!setup.isDestroyed())setup.webContents.send('client:state',state);}
 function validSetup(event){return setup&&!setup.isDestroyed()&&event.sender===setup.webContents&&event.senderFrame===setup.webContents.mainFrame&&event.senderFrame.url===setupURL;}
 function requireSetup(event){if(!validSetup(event))throw Error('Ogiltigt klientanrop.');}
 function windowOptions(extra={}){return{title:'Birchhaven',backgroundColor:'#10221c',icon:path.join(__dirname,'ui/icon.png'),show:false,...extra,webPreferences:{...security,...extra.webPreferences}};}
-function lockNavigation(window,setupPage=false){
+function lockNavigation(window,setupPage=false,localURL=setupURL){
  window.webContents.setWindowOpenHandler(({url})=>{
   // World Creator sync needs a real opener/postMessage relationship. Its remote
   // popup gets no preload or Node access; its own auth navigation remains remote.
   if(!setupPage&&isSyncURL(url))return{action:'allow',overrideBrowserWindowOptions:{width:650,height:640,autoHideMenuBar:true,webPreferences:{...security,preload:undefined}}};
   if(isExternalURL(url))void shell.openExternal(url);return{action:'deny'};
  });
- const guard=(event,legacyURL)=>{const url=event.url||legacyURL;if(setupPage?url===setupURL:isGameURL(url))return;event.preventDefault();if(isExternalURL(url))void shell.openExternal(url);};
+ const guard=(event,legacyURL)=>{const url=event.url||legacyURL;if(setupPage?url===localURL:isGameURL(url))return;event.preventDefault();if(isExternalURL(url))void shell.openExternal(url);};
  window.webContents.on('will-navigate',guard);window.webContents.on('will-redirect',guard);
  window.webContents.on('will-attach-webview',event=>event.preventDefault());
  window.webContents.session.setPermissionRequestHandler((_wc,_permission,callback)=>callback(false));
@@ -35,6 +37,13 @@ function showSetup(){
  setup.removeMenu();lockNavigation(setup,true);setup.on('close',event=>{if(!canQuit&&(child||launching)){event.preventDefault();void closeClient();}});
  setup.once('ready-to-show',()=>setup.show());void setup.loadFile(path.join(__dirname,'ui/index.html'));
 }
+function openDisplay(){
+ if(displayWindow&&!displayWindow.isDestroyed()){displayWindow.show();displayWindow.focus();return;}
+ displayWindow=new BrowserWindow(windowOptions({width:600,height:650,minWidth:480,minHeight:500,parent:game&&!game.isDestroyed()?game:setup,webPreferences:{preload:path.join(__dirname,'display-preload.cjs')}}));
+ displayWindow.removeMenu();lockNavigation(displayWindow,true,displayURL);displayWindow.once('ready-to-show',()=>displayWindow.show());
+ displayWindow.on('closed',()=>{displayWindow=null;if(display.state().deadline)void display.revert().catch(e=>appendLog(e.message));});void displayWindow.loadFile(path.join(__dirname,'ui/display.html'));
+}
+function requireDisplay(event){if(!displayWindow||displayWindow.isDestroyed()||event.sender!==displayWindow.webContents||event.senderFrame!==displayWindow.webContents.mainFrame||event.senderFrame.url!==displayURL)throw Error('Ogiltigt bildskärmsanrop.');}
 function nativeNode(){
  const executable=app.isPackaged?path.join(process.resourcesPath,'node','node.exe'):process.env.BIRCHHAVEN_DESKTOP_NODE;
  if(!executable||!path.isAbsolute(executable)||!fs.existsSync(executable))throw Error('Den medföljande spelmotorn saknas. Installera om klienten.');
@@ -48,7 +57,7 @@ async function startGame(){
  if(launching||child||updating||state.phase==='preparing')return;launching=true;
  try{
   installation=validateInstallation(installation);await assertPortsFree();if(closing)return;
-  writeSettings(settingsFile(),{installation});publish('starting','Startar Birchhaven och kontrollerar sparningen…');
+  let preferences={};try{preferences=JSON.parse(fs.readFileSync(settingsFile(),'utf8'));}catch{}writeSettings(settingsFile(),{...preferences,installation});publish('starting','Startar Birchhaven och kontrollerar sparningen…');
   child=spawn(nativeNode(),[path.join(__dirname,'server-host.mjs'),installation],{cwd:installation,windowsHide:true,stdio:['ignore','pipe','pipe','ipc'],env:{...process.env,ELECTRON_RUN_AS_NODE:undefined,NODE_OPTIONS:((process.env.NODE_OPTIONS||'')+' --require '+JSON.stringify(path.join(__dirname,'hidden-processes.cjs'))).trim()}});
   const ownChild=child;
   childExit=new Promise(resolve=>{ownChild.once('exit',(code)=>{if(child===ownChild)child=null;resolve();if(!closing&&playing){playing=false;game?.destroy();showSetup();publish('error','Spelprocessen stängdes. Dina sparningar ligger kvar. Starta igen.');}appendLog('Server exit '+code+'\n');});ownChild.once('error',()=>{if(child===ownChild)child=null;resolve();});});
@@ -62,10 +71,11 @@ async function startGame(){
   });
   if(closing)return;
   game=new BrowserWindow(windowOptions({width:1440,height:960,minWidth:1024,minHeight:720,autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'game-preload.cjs')}}));game.removeMenu();lockNavigation(game);
-  game.webContents.on('before-input-event',(event,input)=>{if(input.type==='keyDown'&&input.key==='F11'){event.preventDefault();game.setFullScreen(!game.isFullScreen());}});
+  game.webContents.on('before-input-event',(event,input)=>{if(input.type!=='keyDown'||input.isAutoRepeat)return;if(input.key==='F11'){event.preventDefault();void display.toggle().catch(e=>appendLog(e.message));}if(input.key==='F10'){event.preventDefault();openDisplay();}});
+  await display.applySaved();
   game.on('close',event=>{if(!canQuit){event.preventDefault();void closeClient();}});
   game.webContents.on('render-process-gone',()=>{playing=false;showSetup();publish('error','Spelfönstret slutade svara. Spelprocessen hålls igång för att skydda sparningen.');});
-  await loadGameWindow(game);if(!child)throw Error('Spelprocessen stängdes under starten.');playing=true;game.show();setup?.hide();game.focus();publish('playing','Birchhaven körs.');
+  await loadGameWindow(game);game.webContents.setZoomFactor(display.state().current.scale/100);if(!child)throw Error('Spelprocessen stängdes under starten.');playing=true;game.show();setup?.hide();game.focus();publish('playing','Birchhaven körs.');
  }catch(error){if(game&&!playing&&!game.isDestroyed())game.destroy();publish('error',error.message);if(child&&!playing)await stopHost().catch(()=>{});}
  finally{launching=false;}
 }
@@ -89,7 +99,7 @@ async function closeClient(){
   }
   publish('closing','Avslutar spelprocessen…');await stopHost();
   if(pendingInstaller){const installer=spawn(pendingInstaller,[],{detached:true,stdio:'ignore',windowsHide:false});await new Promise((resolve,reject)=>{installer.once('spawn',resolve);installer.once('error',reject);});installer.unref();}
-  canQuit=true;game?.destroy();setup?.destroy();app.quit();
+  canQuit=true;display?.dispose();displayWindow?.destroy();game?.destroy();setup?.destroy();app.quit();
  }catch(error){closing=false;await dialog.showMessageBox(game&&!game.isDestroyed()?game:setup,{type:'warning',title:'Birchhaven hålls öppet',message:error.message,buttons:['OK']});}
 }
 if(!app.requestSingleInstanceLock())app.quit();else{
@@ -98,6 +108,9 @@ if(!app.requestSingleInstanceLock())app.quit();else{
  app.on('window-all-closed',()=>{if(!child)app.quit();});
  app.whenReady().then(async()=>{
   Menu.setApplicationMenu(null);
+  display=createDisplay({screen,file:settingsFile(),getGame:()=>game,onChange:state=>{if(displayWindow&&!displayWindow.isDestroyed())displayWindow.webContents.send('display:state',state);}});
+  ipcMain.handle('client:display',event=>{if(!validSetup(event)&&!(game&&!game.isDestroyed()&&event.sender===game.webContents&&event.senderFrame===game.webContents.mainFrame&&isGameURL(event.senderFrame.url)))throw Error('Ogiltigt klientanrop.');openDisplay();});
+  for(const action of ['get','preview','keep','revert'])ipcMain.handle('display:'+action,(event,value)=>{requireDisplay(event);return action==='get'?display.state():display[action](value);});
 
   ipcMain.handle('client:state',event=>{requireSetup(event);return{...state,installation};});
   ipcMain.handle('client:choose',async event=>{requireSetup(event);if(launching||child||state.phase==='preparing')return state;
