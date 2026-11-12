@@ -1,5 +1,6 @@
 import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';import {Readable,Transform} from 'node:stream';import {pipeline} from 'node:stream/promises';import {gunzipSync} from 'node:zlib';import {execFileSync} from 'node:child_process';
 import {packBundle,hashFile} from './bundle.mjs';
+import {readPatch} from './read-patch.mjs';
 const plan=JSON.parse(fs.readFileSync('release-request.json','utf8'));
 const semver=v=>/^\d+\.\d+\.\d+$/.test(v),hash=v=>/^[a-f0-9]{64}$/.test(v);
 if(plan.format!==1||!semver(plan.version)||!semver(plan.baseVersion)||!hash(plan.baseSha256)||!hash(plan.runtimeSha256)||!hash(plan.patchSha256)||plan.patch!==`release/patches/${plan.version}.json`)throw Error('Invalid release request');
@@ -23,8 +24,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  z.extractall(root)
 `,baseFile,output],{stdio:'inherit'});
 fs.unlinkSync(baseFile);const runtime=path.join(output,'Birchhaven-Singleplayer');
-const patchBytes=fs.readFileSync(plan.patch);if(createHash('sha256').update(patchBytes).digest('hex')!==plan.patchSha256)throw Error('Patch checksum mismatch');
-const patch=JSON.parse(patchBytes);if(patch.version!==plan.version||!Array.isArray(patch.files)||!Array.isArray(patch.remove)||patch.files.length+patch.remove.length>20000)throw Error('Invalid patch');
+const patch=readPatch(plan.patch,plan.patchSha256,plan.version);if(patch.version!==plan.version||!Array.isArray(patch.files)||!Array.isArray(patch.remove)||patch.files.length+patch.remove.length>20000)throw Error('Invalid patch');
 const safe=p=>typeof p==='string'&&p.length<240&&p.split('/').every(x=>/^[a-zA-Z0-9_.@+~-]+$/.test(x)&&!['.','..'].includes(x)&&!/[. ]$/.test(x)&&!/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(x))&&(['dist','scripts','drizzle','docs'].includes(p.split('/')[0])||['local-world.json','LAS-MIG.html','update-version.json'].includes(p));
 const seen=new Set();
 for(const f of [...patch.remove,...patch.files]){

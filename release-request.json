@@ -1,11 +1,11 @@
 {
-    "format": 1,
-    "version": "7.21.0",
-    "name": "Connected Worlds",
-    "baseVersion": "7.20.0",
-    "baseSha256": "11750d08d2bc591a489c31b8386dd6a73aa7c2f6f5b5dcbd3503d439137f1682",
-    "runtimeSha256": "bc5a5f05a660b775f915b7a567841a21a1d0ab1a4bb9864e33993a399667f939",
-    "patch": "release/patches/7.21.0.json",
-    "patchSha256": "570234c2796b6c09859ed7791242122750162427c0fdbcb22722baaa66a5330f",
-    "notes": "World Creator saves locally and syncs maps to private online storage. Versioned map updates preserve newer local edits and character saves. Includes 7.20.1 update recovery fixes. Windows startup and saving are tested by the publishing workflow before release."
+  "format": 1,
+  "version": "7.22.0",
+  "name": "Eight Directions",
+  "baseVersion": "7.20.0",
+  "baseSha256": "11750d08d2bc591a489c31b8386dd6a73aa7c2f6f5b5dcbd3503d439137f1682",
+  "runtimeSha256": "df6354fc53ea47def4d2170d0fe0326733ec77dbe474d60a0b6491ae902cb4eb",
+  "patch": "release/patches/7.22.0.json",
+  "patchSha256": "33e5d1e250c37c2c6e404da003e8fafdd873c95d1c2761ab8abaa7069e7a6c37",
+  "notes": "All live monster families can stand facing all eight directions, with 124 new diagonal poses. Facing survives fresh monster snapshots and stays stable when a creature stops. Corrected the Orc Tower beastmaster west-facing view; original sizes, combat and collision are preserved."
 }

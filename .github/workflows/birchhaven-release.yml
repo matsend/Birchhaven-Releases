@@ -18,6 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - run: node --test release/test-read-patch.mjs
       - run: node release/build-release.mjs
       - uses: actions/upload-artifact@v4
         with:
