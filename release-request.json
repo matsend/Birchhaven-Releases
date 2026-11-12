@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "version": "7.22.2",
-  "name": "Single Score",
-  "baseVersion": "7.22.1",
-  "baseSha256": "92e0db12ea3fb7fd2c23ed08c574df0fe5ab51e0f7d87813ae5a92c28e431653",
-  "runtimeSha256": "b8053ee5f8c0397dbfee6fa534566a3fc6dcd7d53ce9268dae30abcc798eb116",
-  "patch": "release/patches/7.22.2.json",
-  "patchSha256": "3ac5c4163f9b82a7c49275b0ffcc739c9f4f664635c3bb3885e82032f1c5d101",
-  "notes": "Area music fades out and stops before the next track starts, including rapid travel and repeated music toggles. Orc Island uses its dedicated theme throughout the island; the blacksmith keeps normal town music. Returning from a hidden tab or the character screen resumes one music track. Added reproducible normal-loot gear and XP comparisons checked against client and server formulas. Existing combat balance, items and character progression are unchanged."
+  "version": "7.23.0",
+  "name": "Windows Hearth",
+  "baseVersion": "7.22.2",
+  "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
+  "runtimeSha256": "04a037a565b26a9f3d2a968950070e0d354eb4c78b3bb4122252a920301385ae",
+  "patch": "release/patches/7.23.0.json",
+  "patchSha256": "6065c6ef4e8b8901f4c5add6853705c8928823c510aea83d7aa7e2ff46ae4fe6",
+  "notes": "## Windows-klienten\n\nHämta **Birchhaven-Setup-7.23.0-x64.exe** nedan. Installera och starta Birchhaven från skrivbordet. Ingen separat Node-installation behövs. Spelet öppnas i ett eget programfönster. F11 ger helskärm.\n\n**Har du spelat tidigare?** Stäng den gamla starten. I klientens startfönster väljer du **Ta över gammal sparning** och mappen med Start-Birchhaven.cmd. Karaktärer, utrustning och kartor kopieras; originalet lämnas kvar.\n\nUppdateringsknappen i spelets inställningar hämtar kommande klientinstallationer. Sparningar och säkerhetskopior ligger separat under %APPDATA%\\Birchhaven.\n\nDen här utgåvan innehåller spelinnehållet från 7.22.2. Innehållsexpansionen 8.0.0 med nya set och föremål är fortfarande en separat, opublicerad arbetsversion.\n\nInstallationsfilen är inte kodsignerad. Windows kan därför visa en varning om okänd utgivare. Stöder Windows 10/11 x64. Filerna .bhupdate och birchhaven-update.json är endast kompatibilitetsfiler för den äldre uppdateraren; de ska inte startas manuellt."
 }
