@@ -10,13 +10,13 @@ let app,game;const errors=[];
  for(let i=0;i<360;i++){game=app.windows().find(p=>p!==setup&&p.url().startsWith('http://localhost:8787'));if(game)break;await new Promise(r=>setTimeout(r,500));}
  assert(game,'Native game window must open');game.on('pageerror',e=>errors.push(e.message));
  await game.locator('#createcharacter').waitFor({timeout:180000});await game.locator('#createcharacter').click();await game.locator('#heroname').fill('Visual Tester');await game.locator('#begin').click();
- await game.waitForFunction(()=>started&&typeof worldPreparation!=='undefined'&&!worldPreparation.busy&&Creator.ready&&C.width>300&&C.height>200,{},{timeout:180000});
+ await game.waitForFunction(()=>document.getElementById('welcome').hidden&&document.getElementById('world-loading').hidden&&document.getElementById('game').width>300&&document.getElementById('game').height>200,{},{timeout:180000});
  await game.waitForFunction(()=>{const c=document.getElementById('game'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let colors=new Set();for(let i=0;i<d.length;i+=256)if(d[i+3])colors.add((d[i]>>3)+','+(d[i+1]>>3)+','+(d[i+2]>>3));return colors.size>100;},{},{timeout:60000});
  await game.screenshot({path:path.join(out,'rendered-map.png')});
- const before=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z}));let after=before;
+ const before=await game.locator('#coords').textContent();let after=before;
  await game.locator('#game').focus();
- for(const key of ['ArrowRight','ArrowDown','ArrowLeft','ArrowUp']){await game.keyboard.down(key);await new Promise(r=>setTimeout(r,600));await game.keyboard.up(key);after=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z}));if(after.x!==before.x||after.y!==before.y)break;}
- assert(after.x!==before.x||after.y!==before.y,'Player must move through actual keyboard input');assert.deepEqual(errors,[]);
+ for(const key of ['ArrowRight','ArrowDown','ArrowLeft','ArrowUp']){await game.keyboard.down(key);await new Promise(r=>setTimeout(r,600));await game.keyboard.up(key);await new Promise(r=>setTimeout(r,700));after=await game.locator('#coords').textContent();if(after!==before)break;}
+ assert(after!==before,'Player must move through actual keyboard input');assert.deepEqual(errors,[]);
  await game.screenshot({path:path.join(out,'after-movement.png')});
  fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({version:'7.23.0',checks:['Rendered landscape with more than 100 distinct sampled colors','World resource preparation completed','Actual keyboard movement','No renderer errors'],before,after,errors},null,2));
  const done=app.waitForEvent('close',{timeout:180000});await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787')).close());await done;app=null;
