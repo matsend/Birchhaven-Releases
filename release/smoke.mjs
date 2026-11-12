@@ -16,7 +16,11 @@ async function request(route,data){console.log('CHECK '+(data===undefined?'GET '
 async function start(){child=spawn(process.execPath,['Birchhaven-Launcher.mjs','--no-open'],{cwd:root,stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>process.stdout.write(d));child.stderr.on('data',d=>process.stderr.write(d));for(let i=0;i<120;i++){if(child.exitCode!==null)throw Error('Runtime exited');try{const r=await localHttp('/version.js',undefined,1500);if(r.status===200&&r.text.includes('"version":"'+version+'"'))return;}catch{}await sleep(1000);}throw Error('Runtime startup timeout');}
 async function stop(){if(!child||child.exitCode!==null)return;if(process.platform==='win32')execFileSync('taskkill.exe',['/PID',String(child.pid),'/T','/F']);else child.kill('SIGTERM');for(let i=0;i<150&&child.exitCode===null;i++)await sleep(100);if(child.exitCode===null)throw Error('Runtime did not stop');child=null;}
 try{
- await start();await request('/api/player/local-session',{});
+ await start();
+ assert.equal((await request('/api/world/session')).canEdit,false);
+ await request('/api/player/local-session',{});
+ await request('/api/player/local-session',{});
+ assert.ok((await request('/api/player/session')).account);
  assert.equal((await request('/api/world/session')).canEdit,true);
  const published=await request('/api/world/published');savedMap=published.data;
  const draft=await request('/api/world/draft',{data:savedMap,expectedVersion:published.version});assert.deepEqual(draft.data,savedMap);
