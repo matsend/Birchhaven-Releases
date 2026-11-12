@@ -1,5 +1,8 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const {newer}=require('./update.cjs');
+function savedVersion(root){const p=path.join(root,'update-version.json');if(!fs.existsSync(p))return null;const v=JSON.parse(fs.readFileSync(p,'utf8')).version;if(!/^\d+\.\d+\.\d+$/.test(v))throw Error('Spelmappens versionsnummer är ogiltigt.');return v;}
+function preventDowngrade(source,target){if(source&&target&&newer(source,target))throw Error('Sparningen tillhör en nyare spelversion ('+source+'). Installera minst den versionen innan du fortsätter.');}
 function stopped(root){
  const lock=path.join(root,'birchhaven-solo-data.lock');
  if(!fs.existsSync(lock))return;
@@ -22,6 +25,7 @@ function provision(template,userData,version){
  if(!fs.existsSync(root)&&fs.existsSync(previous))fs.renameSync(previous,root);
  stopped(root);
  recoverImport(root);
+ preventDowngrade(savedVersion(root),version);
  try{if(JSON.parse(fs.readFileSync(path.join(root,'.desktop-version.json'))).version===version)return root;}catch{}
  fs.rmSync(stage,{recursive:true,force:true});
  try{
@@ -44,7 +48,7 @@ function recoverImport(root){
 function importSave(sourceRoot,targetRoot){
  sourceRoot=fs.realpathSync(sourceRoot);targetRoot=fs.realpathSync(targetRoot);
  if(sourceRoot===targetRoot)throw Error('Den valda sparningen används redan.');
- stopped(sourceRoot);stopped(targetRoot);recoverImport(targetRoot);
+ stopped(sourceRoot);stopped(targetRoot);recoverImport(targetRoot);preventDowngrade(savedVersion(sourceRoot),savedVersion(targetRoot));
  const source=path.join(sourceRoot,'birchhaven-solo-data'),dest=path.join(targetRoot,'birchhaven-solo-data'),stage=dest+'.importing';
  if(!fs.existsSync(path.join(source,'v3/d1')))throw Error('Mappen innehåller ingen lokal Birchhaven-sparning. Välj mappen med Start-Birchhaven.cmd.');
  fs.rmSync(stage,{recursive:true,force:true});copySave(source,stage);stopped(sourceRoot);stopped(targetRoot);
