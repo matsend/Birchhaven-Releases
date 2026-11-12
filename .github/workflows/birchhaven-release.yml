@@ -51,9 +51,11 @@ jobs:
           Expand-Archive -LiteralPath $archive -DestinationPath smoke
           npm ci --prefix smoke/Birchhaven-Singleplayer --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Diagnose Windows proxy failure (temporary, not release verification)
+        run: node release/diagnose-windows.mjs smoke/Birchhaven-Singleplayer
       - run: node release/smoke.mjs smoke/Birchhaven-Singleplayer
   publish:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: false # Diagnostic run must never publish, including on main.
     needs: [build, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 15

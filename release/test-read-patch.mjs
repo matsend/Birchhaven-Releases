@@ -5,7 +5,18 @@ import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {readPatch} from './read-patch.mjs';
+import {splitPatch} from './split-patch.mjs';
 const hash = b => createHash('sha256').update(b).digest('hex');
+test('large release patches round-trip through bounded transfer parts', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'birchhaven-split-'));
+  t.after(() => fs.rmSync(dir, {recursive:true, force:true}));
+  const patch = {version:'7.22.0', files:[{path:'dist/client/example.js', gzip:'x'.repeat(300000)}], remove:[]};
+  const input = path.join(dir, 'original.json');
+  fs.writeFileSync(input,JSON.stringify(patch));
+  const result = splitPatch(input,path.join(dir,'parts'));
+  assert.equal(result.parts,3);
+  assert.deepEqual(readPatch(result.filename,result.patchSha256,result.version),patch);
+});
 test('multipart patches reject missing, altered, reordered and out-of-directory parts', t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'birchhaven-patch-'));
   t.after(() => fs.rmSync(dir, {recursive:true, force:true}));
