@@ -1,7 +1,7 @@
 'use strict';
 const {app,BrowserWindow,Menu,dialog,ipcMain,shell}=require('electron');
 const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process'),{pathToFileURL}=require('node:url');
-const {GAME_ORIGIN,validateInstallation,assertPortsFree,isGameURL,isSyncURL,isExternalURL,updaterStatus,SAVE_SCRIPT,writeSettings}=require('./core.cjs');
+const {GAME_ORIGIN,validateInstallation,assertPortsFree,isGameURL,isSyncURL,isExternalURL,updaterStatus,SAVE_SCRIPT,writeSettings,loadGameWindow}=require('./core.cjs');
 const {provision,importSave}=require('./install.cjs');
 const {checkUpdate,downloadInstaller}=require('./update.cjs');
 app.setName('Birchhaven');
@@ -65,7 +65,7 @@ async function startGame(){
   game.webContents.on('before-input-event',(event,input)=>{if(input.type==='keyDown'&&input.key==='F11'){event.preventDefault();game.setFullScreen(!game.isFullScreen());}});
   game.on('close',event=>{if(!canQuit){event.preventDefault();void closeClient();}});
   game.webContents.on('render-process-gone',()=>{playing=false;showSetup();publish('error','Spelfönstret slutade svara. Spelprocessen hålls igång för att skydda sparningen.');});
-  await game.loadURL(GAME_ORIGIN);if(!child)throw Error('Spelprocessen stängdes under starten.');playing=true;game.show();setup?.hide();
+  await loadGameWindow(game);if(!child)throw Error('Spelprocessen stängdes under starten.');playing=true;game.show();setup?.hide();
  }catch(error){if(game&&!playing&&!game.isDestroyed())game.destroy();publish('error',error.message);if(child&&!playing)await stopHost().catch(()=>{});}
  finally{launching=false;}
 }

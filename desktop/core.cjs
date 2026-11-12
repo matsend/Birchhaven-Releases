@@ -56,4 +56,19 @@ function writeSettings(file,value){
  fs.mkdirSync(path.dirname(file),{recursive:true});
  const temp=file+'.tmp';fs.writeFileSync(temp,JSON.stringify(value,null,2)+'\n');fs.renameSync(temp,file);
 }
-module.exports={GAME_ORIGIN,UPDATER_ORIGIN,validateInstallation,assertPortsFree,isGameURL,isSyncURL,isExternalURL,updaterStatus,SAVE_SCRIPT,writeSettings};
+// Account/world hydration can legitimately reload the first document before
+// loadURL completes. Wait for the replacement document, preserving all origin
+// guards and treating actual main-frame failures as errors.
+function loadGameWindow(window,timeoutMs=150000){
+ const wc=window.webContents;let timer,settled=false;
+ return new Promise((resolve,reject)=>{
+  const finish=error=>{if(settled)return;settled=true;clearTimeout(timer);wc.off('did-finish-load',loaded);wc.off('did-fail-load',failed);wc.off('destroyed',destroyed);error?reject(error):resolve();};
+  const loaded=()=>finish(isGameURL(wc.getURL())?null:Error('Spelet öppnade en oväntad adress.'));
+  const failed=(_event,code,description,_url,isMainFrame)=>{if(isMainFrame&&code!==-3)finish(Error(description+' ('+code+')'));};
+  const destroyed=()=>finish(Error('Spelfönstret stängdes under starten.'));
+  wc.on('did-finish-load',loaded);wc.on('did-fail-load',failed);wc.on('destroyed',destroyed);
+  timer=setTimeout(()=>finish(Error('Spelfönstret laddades inte klart. Försök starta igen.')),timeoutMs);
+  try{Promise.resolve(window.loadURL(GAME_ORIGIN)).catch(e=>{if(e.code!=='ERR_ABORTED'&&e.errno!==-3)finish(e);});}catch(e){finish(e);}
+ });
+}
+module.exports={GAME_ORIGIN,UPDATER_ORIGIN,validateInstallation,assertPortsFree,isGameURL,isSyncURL,isExternalURL,updaterStatus,SAVE_SCRIPT,writeSettings,loadGameWindow};
