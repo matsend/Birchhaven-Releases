@@ -1,11 +1,14 @@
 name: Build and publish Birchhaven
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths: ['release-request.json', 'release/**', '.github/workflows/birchhaven-release.yml']
   push:
     branches: [main]
     paths: ['release-request.json']
 concurrency:
-  group: birchhaven-release
+  group: birchhaven-release-${{ github.ref }}
   cancel-in-progress: false
 permissions:
   contents: read
@@ -50,6 +53,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run: node release/smoke.mjs smoke/Birchhaven-Singleplayer
   publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [build, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 15
