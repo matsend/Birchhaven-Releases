@@ -26,7 +26,7 @@ async function close(){
  await done;app=null;
 }
 async function roster(){return game.evaluate(async()=>{const r=await fetch('/api/player/characters');if(!r.ok)throw Error('Character API failed');return (await r.json()).data;});}
-try{
+(async()=>{try{
  console.log('INSTALL standalone client without Node dependency');installClient();
  let setup=await launch();await play(setup);
  await game.locator('#createcharacter').click();await game.locator('#heroname').fill('Desktop Tester');await game.locator('#begin').click();
@@ -43,8 +43,12 @@ try{
  saved=await roster();assert(saved.characters.some(c=>c.name==='Desktop Tester'));assert(fs.existsSync(path.join(old,'birchhaven-solo-data/v3/d1')));
  // Exercise World Creator local storage through the rendered client session.
  const map=await game.evaluate(async()=>{const p=await (await fetch('/api/world/published')).json();const r=await fetch('/api/world/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:p.data,expectedVersion:p.version})});return {status:r.status,data:(await r.json()).data};});assert.equal(map.status,200);assert(map.data);
+ // A controlled GitHub response verifies the actual renderer -> isolated preload
+ // -> main-process update action without depending on a not-yet-published release.
+ await app.evaluate((_electron,current)=>{const https=require('node:https'),{EventEmitter}=require('node:events'),{Readable}=require('node:stream');const original=https.get;https.get=(url,options,callback)=>{if(!String(url).endsWith('/birchhaven-desktop-update.json'))return original(url,options,callback);const req=new EventEmitter();req.setTimeout=()=>req;process.nextTick(()=>{const res=Readable.from([JSON.stringify({format:1,version:current,asset:'Birchhaven-Setup-'+current+'-x64.exe',sha256:'a'.repeat(64),size:1000000})]);res.statusCode=200;res.headers={};callback(res);});return req;};},version);
+ const update=await game.evaluate(()=>window.birchhavenDesktop.update());assert.match(update.message,/senaste Windows-klienten/);
  await game.screenshot({path:path.join(screenshotDir,'windows-client-saved-character.png')});await close();
  assert.deepEqual(errors,[],'Renderer errors');
  fs.writeFileSync(path.join(screenshotDir,'verification.json'),JSON.stringify({version,platform:process.platform,checks:['NSIS installation','bundled Node and runtime','sandboxed game window','create character','F11 fullscreen','save and graceful close','reinstall preserving saves','native import picker','old save unchanged','world draft persistence'],rendererErrors:errors},null,2));
  console.log('PASS: installed Windows client, own game window, save, restart, reinstall and import.');
-}finally{if(app)await app.close();}
+}finally{if(app)await app.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

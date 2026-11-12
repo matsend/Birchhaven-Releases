@@ -13,7 +13,7 @@ function download(url,max,onChunk,redirects=0){return new Promise((resolve,rejec
 });}
 async function checkUpdate(current){const parts=[];await download(BASE+'latest/download/birchhaven-desktop-update.json',16384,c=>parts.push(c));const m=validateManifest(JSON.parse(Buffer.concat(parts)));return newer(m.version,current)?m:null;}
 async function downloadInstaller(m,directory){validateManifest(m);fs.mkdirSync(directory,{recursive:true});const file=path.join(directory,m.asset),temp=file+'.partial';fs.rmSync(temp,{force:true});const fd=fs.openSync(temp,'wx'),hash=crypto.createHash('sha256');
- try{const size=await download(BASE+'download/v'+m.version+'/'+m.asset,m.size,c=>{fs.writeSync(fd,c);hash.update(c);});if(size!==m.size||hash.digest('hex')!==m.sha256)throw Error('Uppdateringens kontrollsumma stämmer inte. Inget har installerats.');fs.closeSync(fd);fs.renameSync(temp,file);return file;}
+ try{const size=await download(BASE+'download/v'+m.version+'/'+m.asset,m.size,c=>{let offset=0;while(offset<c.length)offset+=fs.writeSync(fd,c,offset,c.length-offset);hash.update(c);});if(size!==m.size||hash.digest('hex')!==m.sha256)throw Error('Uppdateringens kontrollsumma stämmer inte. Inget har installerats.');fs.closeSync(fd);fs.renameSync(temp,file);return file;}
  catch(e){try{fs.closeSync(fd);}catch{}fs.rmSync(temp,{force:true});throw e;}
 }
 module.exports={newer,validateManifest,checkUpdate,downloadInstaller};
