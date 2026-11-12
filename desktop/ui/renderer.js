@@ -4,3 +4,5 @@ function render(state){message.textContent=state.message;installation.textConten
 window.birchhavenClient.onState(render);window.birchhavenClient.getState().then(render);
 choose.onclick=async()=>{try{render(await window.birchhavenClient.chooseInstallation());}catch(error){message.textContent=error.message;}};
 start.onclick=async()=>{try{await window.birchhavenClient.start();}catch(error){message.textContent=error.message;}};
+
+document.getElementById('display').onclick=()=>window.birchhavenClient.displaySettings();

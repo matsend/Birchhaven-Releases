@@ -42,6 +42,19 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  await game.locator('#createcharacter').click();await game.locator('#heroname').fill('Desktop Tester');await game.locator('#begin').click();
  await game.locator('#welcome').waitFor({state:'hidden',timeout:30000});
  await game.waitForFunction(()=>document.getElementById('charactername').textContent==='Desktop Tester');
+ await game.waitForFunction(()=>document.getElementById('welcome')?.hidden===true&&document.getElementById('world-loading')?.hidden===true,{},{timeout:180000});
+ await game.waitForFunction(()=>{const c=document.getElementById('game');if(!c||c.width<300)return false;const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data,colors=new Set();for(let i=0;i<d.length;i+=256)if(d[i+3])colors.add((d[i]>>3)+','+(d[i+1]>>3)+','+(d[i+2]>>3));return colors.size>100;},{},{timeout:60000});
+ await game.evaluate(()=>window.birchhavenDesktop.displaySettings());let settings;
+ for(let i=0;i<60;i++){settings=app.windows().find(p=>p.url().endsWith('/display.html'));if(settings)break;await new Promise(r=>setTimeout(r,250));}assert(settings,'Display settings must open from game');
+ await settings.locator('#resolution').selectOption('1280x720');await settings.locator('#scale').selectOption('85');await settings.locator('#preview').click();await settings.locator('#keep').click();
+ assert.equal((await settings.evaluate(()=>window.birchhavenDisplay.get())).saved.scale,85);
+ assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787')).webContents.getZoomFactor()),.85);
+ await settings.locator('#scale').selectOption('125');await settings.locator('#preview').click();
+ await settings.locator('#keep').waitFor({state:'visible'});
+ for(let i=0;i<100;i++){const current=await settings.evaluate(()=>window.birchhavenDisplay.get());if(!current.deadline)break;if(i===99)throw Error('Display preview did not revert within 25 seconds');await new Promise(r=>setTimeout(r,250));}
+ assert.equal((await settings.evaluate(()=>window.birchhavenDisplay.get())).current.scale,85,'Unconfirmed display preview must revert');
+ await settings.screenshot({path:path.join(screenshotDir,'display-settings.png')});
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().endsWith('/display.html')).close());
  await game.screenshot({path:path.join(screenshotDir,'windows-client-game.png')});
  for(const expected of [true,false]){
   await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.focus();w.webContents.sendInputEvent({type:'keyDown',keyCode:'F11'});w.webContents.sendInputEvent({type:'keyUp',keyCode:'F11'});});
@@ -49,7 +62,7 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  }
  console.log('SAVE and close through the actual window lifecycle');await close();
  const state=path.join(data,'game/birchhaven-solo-data');assert(fs.existsSync(path.join(state,'v3/d1')));fs.mkdirSync(old,{recursive:true});fs.cpSync(state,path.join(old,'birchhaven-solo-data'),{recursive:true});
- console.log('REINSTALL client; saved characters must survive');installClient();setup=await launch();await play(setup);let saved=await roster();assert(saved.characters.some(c=>c.name==='Desktop Tester'));await close();
+ console.log('REINSTALL client; saved characters must survive');installClient();setup=await launch();await play(setup);let saved=await roster();assert(saved.characters.some(c=>c.name==='Desktop Tester'));assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787')).webContents.getZoomFactor()),.85,'Confirmed display settings survive reinstall');await close();
  console.log('IMPORT an old local save through the native picker');setup=await launch();
  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});dialog.showMessageBox=async()=>({response:0});},old);
  await setup.locator('#choose').click();await setup.locator('#message').filter({hasText:'Din gamla sparning är kopierad'}).waitFor({timeout:60000});await play(setup);
@@ -62,7 +75,7 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  const update=await game.evaluate(()=>window.birchhavenDesktop.update());assert.match(update.message,/senaste Windows-klienten/);
  await game.screenshot({path:path.join(screenshotDir,'windows-client-saved-character.png')});await close();
  assert.deepEqual(errors,[],'Renderer errors');
- fs.writeFileSync(path.join(screenshotDir,'verification.json'),JSON.stringify({version,platform:process.platform,checks:['NSIS installation','bundled Node and runtime','sandboxed game window','create character','F11 fullscreen','save and graceful close','reinstall preserving saves','native import picker','old save unchanged','world draft persistence'],rendererErrors:errors},null,2));
+ fs.writeFileSync(path.join(screenshotDir,'verification.json'),JSON.stringify({version,platform:process.platform,checks:['rendered world','display resolution and scale','automatic display rollback','display preferences survive reinstall','NSIS installation','bundled Node and runtime','sandboxed game window','create character','F11 fullscreen','save and graceful close','reinstall preserving saves','native import picker','old save unchanged','world draft persistence'],rendererErrors:errors},null,2));
  console.log('PASS: installed Windows client, own game window, save, restart, reinstall and import.');
 }catch(error){
  testFailed=true;console.error('WINDOWS CLIENT FAILURE',error);
