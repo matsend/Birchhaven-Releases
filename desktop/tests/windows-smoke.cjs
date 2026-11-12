@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const repo=path.resolve(__dirname,'../..'),temp=path.join(process.env.RUNNER_TEMP||repo,'BirchhavenClientTest'),install=path.join(temp,'Installed'),data=path.join(temp,'Player Data'),old=path.join(temp,'Old Game');
 const version=require('../package.json').version,installer=path.join(repo,'output/desktop',`Birchhaven-Setup-${version}-x64.exe`),exe=path.join(install,'Birchhaven.exe');
 fs.mkdirSync(temp,{recursive:true});const screenshotDir=path.join(repo,'output/desktop-evidence');fs.mkdirSync(screenshotDir,{recursive:true});
-let app,game;const errors=[];
+let app,game,testFailed=false;const errors=[];
 function installClient(){execFileSync(installer,['/S','/D='+install],{timeout:180000,stdio:'inherit'});assert(fs.existsSync(exe),'Installer must create Birchhaven.exe');}
 async function launch(){
  app=await electron.launch({executablePath:exe,env:{...process.env,CI:'true',BIRCHHAVEN_TEST_USER_DATA:data},timeout:60000});
@@ -12,7 +12,7 @@ async function launch(){
 }
 async function play(setup){
  const window=app.waitForEvent('window',{timeout:180000});
- await setup.locator('#start').click();game=await window;await game.waitForURL('http://localhost:8787/**',{timeout:180000});
+ await setup.locator('#start').click();game=await Promise.race([window,setup.waitForFunction(async()=> (await globalThis.birchhavenClient.getState()).phase==='error',{},{timeout:180000}).then(async()=>{throw Error('Client startup: '+await setup.locator('#message').innerText());})]);await game.waitForURL('http://localhost:8787/**',{timeout:180000});
  game.on('pageerror',e=>errors.push(e.message));
  await game.locator('#createcharacter').waitFor({state:'visible',timeout:180000});
  await game.waitForFunction(()=>typeof window.flushPlayerAccount==='function'&&window.BIRCHHAVEN_SINGLEPLAYER===true);
@@ -51,4 +51,8 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  assert.deepEqual(errors,[],'Renderer errors');
  fs.writeFileSync(path.join(screenshotDir,'verification.json'),JSON.stringify({version,platform:process.platform,checks:['NSIS installation','bundled Node and runtime','sandboxed game window','create character','F11 fullscreen','save and graceful close','reinstall preserving saves','native import picker','old save unchanged','world draft persistence'],rendererErrors:errors},null,2));
  console.log('PASS: installed Windows client, own game window, save, restart, reinstall and import.');
-}finally{if(app)await app.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
+}catch(error){
+ testFailed=true;console.error('WINDOWS CLIENT FAILURE',error);
+ if(app)for(const [i,page] of app.windows().entries()){try{console.error('WINDOW',i,page.url(),(await page.locator('body').innerText()).slice(0,5000));await page.screenshot({path:path.join(screenshotDir,'failure-'+i+'.png')});}catch{}}
+ throw error;
+}finally{const log=path.join(data,'desktop.log');if(fs.existsSync(log)){fs.copyFileSync(log,path.join(screenshotDir,'desktop.log'));if(testFailed||errors.length)console.error(fs.readFileSync(log,'utf8').slice(-12000));}if(app)await app.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
