@@ -5,7 +5,7 @@ fs.mkdirSync(out,{recursive:true});fs.mkdirSync(temp,{recursive:true});
 let app,game,stage='initializing';function checkpoint(value){stage=value;console.log('STAGE',value);fs.writeFileSync(path.join(out,'stage.json'),JSON.stringify({stage,at:new Date().toISOString()}));}
 const watchdog=setTimeout(()=>{checkpoint('TIMEOUT at '+stage);if(app)execFileSync('taskkill',['/pid',String(app.process().pid),'/t','/f']);process.exit(1);},480000);
 const errors=[],httpErrors=[],scenes=[],geometry=[];
-async function capture(name){checkpoint(name);await game.screenshot({path:path.join(out,name+'.png')});console.log('CAPTURE',name);}
+async function capture(name){checkpoint(name);const png=await app.evaluate(async({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));return(await w.webContents.capturePage()).toPNG().toString('base64');});fs.writeFileSync(path.join(out,name+'.png'),Buffer.from(png,'base64'));console.log('CAPTURE',name);}
 async function size(width,height,scale=1){await app.evaluate(({BrowserWindow},{width,height,scale})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.setContentSize(width,height);w.webContents.setZoomFactor(scale);},{width,height,scale});await game.waitForTimeout(600);}
 (async()=>{try{
  checkpoint('install');execFileSync(path.join(repo,'output/desktop/Birchhaven-Setup-8.0.0-x64.exe'),['/S','/D='+install],{timeout:180000,stdio:'inherit'});
@@ -28,6 +28,7 @@ async function size(width,height,scale=1){await app.evaluate(({BrowserWindow},{w
  }
  fs.writeFileSync(path.join(out,'live-geometry.json'),JSON.stringify(liveGeometry,null,2));
  await size(1920,1080);await game.keyboard.press('F10');await game.waitForTimeout(600);await capture('live-display-settings');await game.keyboard.press('Escape');
+ assert.deepEqual(errors,[],'Live renderer exceptions');console.log('PASS native HUD capture');return;
 
  // Scene fixtures exercise unmodified production painters and CSS, with in-memory
  // storage, no account transport, no simulation and no saves. They are NOT a playthrough.
