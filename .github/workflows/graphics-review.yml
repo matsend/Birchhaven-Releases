@@ -1,0 +1,29 @@
+name: Birchhaven graphics review
+on:
+  push:
+    branches: [review/graphics-8-0-0]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  visual:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-release
+          path: output/desktop
+          run-id: 43417914574
+          github-token: '${{ github.token }}'
+      - name: Install test driver
+        env: {ELECTRON_SKIP_BINARY_DOWNLOAD: '1', PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'}
+        run: npm ci --prefix desktop --no-audit --no-fund
+      - name: Capture installed client and isolated graphics scenes
+        run: node desktop/tests/graphics-review.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: graphics-review-evidence, path: output/graphics-review, retention-days: 30}
