@@ -45,6 +45,7 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  await game.waitForFunction(()=>document.getElementById('welcome')?.hidden===true&&document.getElementById('world-loading')?.hidden===true,{},{timeout:180000});
  await game.waitForFunction(()=>{const c=document.getElementById('game');if(!c||c.width<300)return false;const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data,colors=new Set();for(let i=0;i<d.length;i+=256)if(d[i+3])colors.add((d[i]>>3)+','+(d[i+1]>>3)+','+(d[i+2]>>3));return colors.size>100;},{},{timeout:60000});
  await require('./frontier-smoke.cjs')(game,screenshotDir);
+ await require('./fullscreen-hud-smoke.cjs')(game,app,screenshotDir);
  await game.evaluate(()=>window.birchhavenDesktop.displaySettings());let settings;
  for(let i=0;i<60;i++){settings=app.windows().find(p=>p.url().endsWith('/display.html'));if(settings)break;await new Promise(r=>setTimeout(r,250));}assert(settings,'Display settings must open from game');
  await settings.locator('#resolution').selectOption('1280x720');await settings.locator('#scale').selectOption('85');await settings.locator('#preview').click();await settings.locator('#keep').click();

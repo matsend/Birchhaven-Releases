@@ -26,7 +26,7 @@ Välj **Sök efter uppdateringar** i spelets inställningar. Klienten hämtar n�
 
 ## Innehåll
 
-8.0.0 Living Frontiers är publicerad: 12 set, 89 utrustningsföremål, 11 mat-/råvarutyper, 39 uppdrag, sex nya dungeonvåningar och 16 musikspår. 8.0.1 Clean Silhouettes rättar bossarnas bildutsnitt i Orc Tower. Fullständiga gång- och stridsanimationer i åtta riktningar och egna rustningssilhuetter är fortfarande utvecklingsarbete. Senaste färdigtestade installation finns under Releases.
+8.0.0 Living Frontiers är publicerad: 12 set, 89 utrustningsföremål, 11 mat-/råvarutyper, 39 uppdrag, sex nya dungeonvåningar och 16 musikspår. 8.0.1 Clean Silhouettes rättar bossarnas bildutsnitt i Orc Tower. 8.1.0 Leafbound View fyller hela spelfönstret, samlar fyrkantig minimap och Character i en lövram och låter båda fällas ihop separat. Flera öppna väskor ryms i en rullyta ovanför energikulan. Fullständiga gång- och stridsanimationer i åtta riktningar och egna rustningssilhuetter är fortfarande utvecklingsarbete. Senaste färdigtestade installation finns under Releases.
 
 World Creator **Spara och synka** finns kvar. Spel och lokala sparningar fungerar utan internet; synkning och uppdateringar kräver internet. Kartöverföringen innehåller inte karaktärernas framsteg.
 

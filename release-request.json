@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "version": "8.0.1",
-  "name": "Clean Silhouettes",
+  "version": "8.1.0",
+  "name": "Leafbound View",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "5671c5ea51f92dbe63bf6defe1db879244cf341edfabbb7574c67fc19b2fe11f",
-  "patch": "release/patches/8.0.1.json",
-  "patchSha256": "6c54433441cf931a1b25e0e2671ad78474d5021de5c23224748d0e0cec0274c5",
-  "notes": "Corrected Orc Tower campaign boss atlas rectangles: removed fragments from the next row, restored the Ironcrown crown and kept complete weapons within each frame. Reviewed all eight interiors, 23 active dungeon floors, outdoor regions, 34 monster direction families and all twelve frontier equipment sets. This is a visual review, not a full campaign playthrough. Full eight-direction walking/action art and bespoke clothing silhouettes remain unfinished. Existing item IDs, stats, maps and saves are unchanged."
+  "runtimeSha256": "a46216362b070a609edbb5308cff160f9d3e868d89aaca23dc72756565d9e2c5",
+  "patch": "release/patches/8.1.0.json",
+  "patchSha256": "ae4fbebc2a3fb9a0567dfb8514729a49965ba18819026495c63616ab0df5acda",
+  "notes": "The world fills the game window at every supported resolution, with Health and Energy anchored to the bottom corners. A square minimap and Character share a restrained gold leaf frame inside the playfield. Minimap and the entire Character card minimize independently and remember their state on this computer. Several bags can stay open in a scrollable stack that stops above the Energy ornament. Checked the installed Windows client at 720p, 1080p, 1440p, ultrawide and 85\u2013125% UI scale. Existing item ownership, combat, maps and saves are unchanged."
 }
