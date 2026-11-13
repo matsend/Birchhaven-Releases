@@ -2,39 +2,42 @@ const {_electron:electron}=require('playwright');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
 const repo=path.resolve(__dirname,'../..'),temp=path.join(process.env.RUNNER_TEMP,'BirchhavenGraphicsReview'),install=path.join(temp,'Installed'),data=path.join(temp,'Review Data'),out=path.join(repo,'output/graphics-review');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(temp,{recursive:true});
-let app,game;const errors=[],httpErrors=[],scenes=[],geometry=[];
-async function capture(name){await game.screenshot({path:path.join(out,name+'.png')});console.log('CAPTURE',name);}
+let app,game,stage='initializing';function checkpoint(value){stage=value;console.log('STAGE',value);fs.writeFileSync(path.join(out,'stage.json'),JSON.stringify({stage,at:new Date().toISOString()}));}
+const watchdog=setTimeout(()=>{checkpoint('TIMEOUT at '+stage);if(app)execFileSync('taskkill',['/pid',String(app.process().pid),'/t','/f']);process.exit(1);},480000);
+const errors=[],httpErrors=[],scenes=[],geometry=[];
+async function capture(name){checkpoint(name);await game.screenshot({path:path.join(out,name+'.png')});console.log('CAPTURE',name);}
 async function size(width,height,scale=1){await app.evaluate(({BrowserWindow},{width,height,scale})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.setContentSize(width,height);w.webContents.setZoomFactor(scale);},{width,height,scale});await game.waitForTimeout(600);}
 (async()=>{try{
- execFileSync(path.join(repo,'output/desktop/Birchhaven-Setup-8.0.0-x64.exe'),['/S','/D='+install],{timeout:180000,stdio:'inherit'});
+ checkpoint('install');execFileSync(path.join(repo,'output/desktop/Birchhaven-Setup-8.0.0-x64.exe'),['/S','/D='+install],{timeout:180000,stdio:'inherit'});
  app=await electron.launch({executablePath:path.join(install,'Birchhaven.exe'),env:{...process.env,CI:'true',BIRCHHAVEN_TEST_USER_DATA:data},timeout:60000});
- const setup=await app.firstWindow();await setup.locator('#start:not([disabled])').waitFor({timeout:180000});await setup.locator('#start').click();
+ checkpoint('launcher');const setup=await app.firstWindow();await setup.locator('#start:not([disabled])').waitFor({timeout:180000});await setup.locator('#start').click();
  for(let i=0;i<360;i++){game=app.windows().find(p=>p!==setup&&p.url().startsWith('http://localhost:8787'));if(game)break;await new Promise(r=>setTimeout(r,500));}
  assert(game,'Native game window must open');game.on('pageerror',e=>errors.push(e.message));game.on('response',r=>{if(r.status()>=400)httpErrors.push({url:r.url(),status:r.status()});});
+ checkpoint('native visibility');for(let i=0;i<240;i++){if(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().some(w=>w.webContents.getURL().startsWith('http://localhost:8787')&&w.isVisible())))break;if(i===239)throw Error('Game never visible');await new Promise(r=>setTimeout(r,500));}
  await game.waitForFunction(()=>window.BIRCHHAVEN_SINGLEPLAYER===true&&typeof window.flushPlayerAccount==='function',{},{timeout:180000});
- await game.locator('#createcharacter').waitFor({timeout:180000});await game.bringToFront();await size(1920,1080);await capture('00-character-selection');
- await game.locator('#createcharacter').click();await game.locator('#heroname').fill('Graphics Review');await game.locator('#begin').click();
+ checkpoint('character selection');await game.locator('#createcharacter').waitFor({timeout:180000});await game.bringToFront();await size(1920,1080);await capture('00-character-selection');
+ checkpoint('create character');await game.locator('#createcharacter').click();await game.locator('#heroname').fill('Graphics Review');await game.locator('#begin').click();
  await game.waitForFunction(()=>document.getElementById('welcome')?.hidden===true&&document.getElementById('world-loading')?.hidden===true,{},{timeout:180000});
  await game.waitForTimeout(1500);await capture('01-live-town');
  const before=await game.locator('#coords').textContent();await game.locator('#game').focus();await game.keyboard.down('ArrowRight');await game.waitForTimeout(700);await game.keyboard.up('ArrowRight');await game.waitForTimeout(700);const after=await game.locator('#coords').textContent();
  fs.writeFileSync(path.join(out,'live-client.json'),JSON.stringify({before,after,errors,httpErrors},null,2));
  // Scene fixtures exercise unmodified production painters and CSS, with in-memory
  // storage, no account transport, no simulation and no saves. They are NOT a playthrough.
- const runtime=path.join(install,'resources/runtime');let html=fs.readFileSync(path.join(runtime,'dist/client/index.html'),'utf8');
+ checkpoint('isolated fixture');const runtime=path.join(install,'resources/runtime');let html=fs.readFileSync(path.join(runtime,'dist/client/index.html'),'utf8');
  const omit=new Set(['multiplayer.js','multiplayer-trial.js','world-pve.js','world-loading.js']);
  html=html.replace(/<script src="([^?"]+)(?:[^"]*)"><\/script>/g,(tag,file)=>omit.has(file)?'':tag);
  const fixture=`<script>window.__auditRead=window.fetch.bind(window);const memory=()=>{const m=new Map();return {getItem:k=>m.get(k)||null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k),clear:()=>m.clear()}};Object.defineProperty(window,'localStorage',{value:memory()});Object.defineProperty(window,'sessionStorage',{value:memory()});window.fetch=undefined;window.WebSocket=undefined;</script>`;
  html=html.replace('<head>','<head>'+fixture);
  await game.route('**/graphics-review-fixture.html',r=>r.fulfill({status:200,contentType:'text/html',body:html}));
  await game.goto('http://localhost:8787/graphics-review-fixture.html',{waitUntil:'load',timeout:120000});
- await game.evaluate(async()=>{
+ checkpoint('initialize fixture');await game.evaluate(async()=>{
   const read=window.__auditRead;const b=await(await read('/world-base.json')).json(),catalog=await(await read('/sprite-manifest.json')).json(),published=await(await read('/api/world/published')).json();
   const validation=await import('/world-validation.mjs');Creator.base=b;Creator.catalog=catalog.assets;Creator.cells=validation.worldObjectCells;Creator.ready=true;Creator.error=null;creatorApply(published.data);Creator.active=false;
   save=()=>{};tick=()=>{};paused=()=>false;started=true;casting=null;target=null;path=[];held.clear();p.name='Graphics Review';p.profileId='isolated-visual-review';p.z=0;p.x=22;p.y=29;p.level=110;p.dead=false;p.worldClock={minutes:720,epoch:Date.now()};p.hp=maxhp();p.energy=100;
   document.getElementById('welcome').hidden=true;document.getElementById('welcome').style.display='none';update();
   window.__reviewWarm=async()=>{for(let round=0;round<3;round++){const pending=[...document.images,...(typeof heroVisual!=='undefined'?heroVisual.images:[]),...creatorImages.values(),...landscapeArt.images.values(),...(typeof npcVisual!=='undefined'?npcVisual.prepare(p.z):[])];await Promise.all(pending.map(i=>i.decode?.().catch(()=>{})));await new Promise(r=>setTimeout(r,350));}};
  });
- await game.evaluate(()=>window.__reviewWarm());
+ checkpoint('warm fixture');await game.evaluate(()=>window.__reviewWarm());
  for(const [w,h]of [[1280,720],[1920,1080],[2560,1440]]){await size(w,h);await game.evaluate(()=>update());await capture('02-hud-'+w+'x'+h);geometry.push(await game.evaluate(()=>({width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,rects:Object.fromEntries(['.game-shell','.viewport','aside','#skillbar','.mapbox'].map(s=>{const e=document.querySelector(s),r=e?.getBoundingClientRect();return[s,r?{x:r.x,y:r.y,w:r.width,h:r.height}:null]}))})));}
  await size(1920,1080);
  const locations=await game.evaluate(()=>{
@@ -52,4 +55,4 @@ async function size(width,height,scale=1){await app.evaluate(({BrowserWindow},{w
  await game.evaluate(()=>{p.z=0;p.interior=null;p.x=22;p.y=29;p.worldClock={minutes:0,epoch:Date.now()};update();});await game.evaluate(()=>window.__reviewWarm());await capture('scene-town-night');
  fs.writeFileSync(path.join(out,'review.json'),JSON.stringify({version:'8.0.0',mode:'Installed Windows client plus explicitly isolated renderer fixtures; fixtures do not establish gameplay progression',scenes,geometry,errors,httpErrors},null,2));
  assert.deepEqual(errors,[],'Renderer exceptions');console.log('PASS graphics capture',scenes.length,'scenes');
-}finally{if(game&&!game.isClosed())await game.screenshot({path:path.join(out,'last-state.png')}).catch(()=>{});fs.writeFileSync(path.join(out,'partial-results.json'),JSON.stringify({scenes,geometry,errors,httpErrors},null,2));if(app)await app.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
+}finally{console.log('REVIEW END',stage,JSON.stringify({errors,httpErrors,scenes:scenes.length}));if(game&&!game.isClosed())await game.screenshot({path:path.join(out,'last-state.png')}).catch(()=>{});fs.writeFileSync(path.join(out,'partial-results.json'),JSON.stringify({scenes,geometry,errors,httpErrors},null,2));clearTimeout(watchdog);if(app)try{execFileSync('taskkill',['/pid',String(app.process().pid),'/t','/f']);}catch{}}})().catch(e=>{console.error(e);process.exitCode=1;});
