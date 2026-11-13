@@ -21,6 +21,14 @@ async function size(width,height,scale=1){await app.evaluate(({BrowserWindow},{w
  await game.waitForTimeout(1500);await capture('01-live-town');
  const before=await game.locator('#coords').textContent();await game.locator('#game').focus();await game.keyboard.down('ArrowRight');await game.waitForTimeout(700);await game.keyboard.up('ArrowRight');await game.waitForTimeout(700);const after=await game.locator('#coords').textContent();
  fs.writeFileSync(path.join(out,'live-client.json'),JSON.stringify({before,after,errors,httpErrors},null,2));
+ const liveGeometry=[];
+ for(const [w,h,scale]of [[1280,720,1],[1920,1080,1],[2560,1440,1],[1280,720,.85],[1920,1080,1.15]]){
+  await size(w,h,scale);await capture('live-hud-'+w+'x'+h+'-'+scale);
+  liveGeometry.push(await game.evaluate(()=>({width:innerWidth,height:innerHeight,dpr:devicePixelRatio,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,rects:Object.fromEntries(['.game-shell','.viewport','aside','#skillbar','.mapbox'].map(s=>{const r=document.querySelector(s)?.getBoundingClientRect();return[s,r?{x:r.x,y:r.y,w:r.width,h:r.height}:null]}))})));
+ }
+ fs.writeFileSync(path.join(out,'live-geometry.json'),JSON.stringify(liveGeometry,null,2));
+ await size(1920,1080);await game.keyboard.press('F10');await game.waitForTimeout(600);await capture('live-display-settings');await game.keyboard.press('Escape');
+
  // Scene fixtures exercise unmodified production painters and CSS, with in-memory
  // storage, no account transport, no simulation and no saves. They are NOT a playthrough.
  checkpoint('isolated fixture');const runtime=path.join(install,'resources/runtime');let html=fs.readFileSync(path.join(runtime,'dist/client/index.html'),'utf8');
