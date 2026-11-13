@@ -113,6 +113,10 @@ if(!app.requestSingleInstanceLock())app.quit();else{
   for(const action of ['get','preview','keep','revert'])ipcMain.handle('display:'+action,(event,value)=>{requireDisplay(event);return action==='get'?display.state():display[action](value);});
 
   ipcMain.handle('client:state',event=>{requireSetup(event);return{...state,installation};});
+  ipcMain.handle('client:exit',async event=>{
+   if(!validSetup(event)&&!(game&&!game.isDestroyed()&&event.sender===game.webContents&&event.senderFrame===game.webContents.mainFrame&&isGameURL(event.senderFrame.url)))throw Error('Ogiltigt klientanrop.');
+   await closeClient();return {closing:canQuit};
+  });
   ipcMain.handle('client:choose',async event=>{requireSetup(event);if(launching||child||state.phase==='preparing')return state;
    const selection=await dialog.showOpenDialog(setup,{title:'Välj din gamla Birchhaven-spelmapp',properties:['openDirectory']});
    if(!selection.canceled){try{

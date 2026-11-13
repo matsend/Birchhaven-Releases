@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "version": "8.1.0",
-  "name": "Leafbound View",
+  "version": "8.2.0",
+  "name": "Living Artwork",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "a46216362b070a609edbb5308cff160f9d3e868d89aaca23dc72756565d9e2c5",
-  "patch": "release/patches/8.1.0.json",
-  "patchSha256": "ae4fbebc2a3fb9a0567dfb8514729a49965ba18819026495c63616ab0df5acda",
-  "notes": "The world fills the game window at every supported resolution, with Health and Energy anchored to the bottom corners. A square minimap and Character share a restrained gold leaf frame inside the playfield. Minimap and the entire Character card minimize independently and remember their state on this computer. Several bags can stay open in a scrollable stack that stops above the Energy ornament. Checked the installed Windows client at 720p, 1080p, 1440p, ultrawide and 85\u2013125% UI scale. Existing item ownership, combat, maps and saves are unchanged."
+  "runtimeSha256": "a2efa0eaa8596a35f1b8693f3c714db7a8042f821490432a0a27d7f0e6c09c3a",
+  "patch": "release/patches/8.2.0.json",
+  "patchSha256": "657076f12b9b8732b37fcffe535c7aead261ba56e27a1ffd2e7c47f662f28553",
+  "notes": "The approved town square, blacksmith and inn use their exact original artwork with separate walkable geometry and depth layers. Building entrances and indoor services follow the artwork; displaced saved positions are repaired without changing items or progress. Removed promotional login slogans. Added native Exit controls to startup, character selection and Settings, using the acknowledged save-and-close flow. Other environments retain their existing art and are not covered by this visual acceptance."
 }

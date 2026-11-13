@@ -32,13 +32,13 @@ async function play(setup){
 }
 async function close(){
  const done=app.waitForEvent('close',{timeout:180000});
- await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.close();});
+ if(await game.locator('#welcome').isVisible())await game.locator('#exit-welcome').click();else{await game.locator('#settings').click();await game.locator('#exit-game').click();}
  await done;app=null;
 }
 async function roster(){return game.evaluate(async()=>{const r=await fetch('/api/player/characters');if(!r.ok)throw Error('Character API failed');return (await r.json()).data;});}
 (async()=>{try{
  console.log('INSTALL standalone client without Node dependency');installClient();
- let setup=await launch();await play(setup);
+ let setup=await launch();assert(await setup.locator('#exit').isVisible());assert(!/Välkommen hem|Ditt spel\. Dina/.test(await setup.locator('body').innerText()));await play(setup);assert(await game.locator('#exit-welcome').isVisible());assert(!/Adventure awaits|A MEDIEVAL ADVENTURE/.test(await game.locator('#welcome').innerText()));await game.screenshot({path:path.join(screenshotDir,'login-with-exit.png')});
  await game.locator('#createcharacter').click();await game.locator('#heroname').fill('Desktop Tester');await game.locator('#begin').click();
  await game.locator('#welcome').waitFor({state:'hidden',timeout:30000});
  await game.waitForFunction(()=>document.getElementById('charactername').textContent==='Desktop Tester');
@@ -46,6 +46,7 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  await game.waitForFunction(()=>{const c=document.getElementById('game');if(!c||c.width<300)return false;const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data,colors=new Set();for(let i=0;i<d.length;i+=256)if(d[i+3])colors.add((d[i]>>3)+','+(d[i+1]>>3)+','+(d[i+2]>>3));return colors.size>100;},{},{timeout:60000});
  await require('./frontier-smoke.cjs')(game,screenshotDir);
  await require('./fullscreen-hud-smoke.cjs')(game,app,screenshotDir);
+ await require('./reference-art-smoke.cjs')(game,app,screenshotDir);
  await game.evaluate(()=>window.birchhavenDesktop.displaySettings());let settings;
  for(let i=0;i<60;i++){settings=app.windows().find(p=>p.url().endsWith('/display.html'));if(settings)break;await new Promise(r=>setTimeout(r,250));}assert(settings,'Display settings must open from game');
  await settings.locator('#resolution').selectOption('1280x720');await settings.locator('#scale').selectOption('85');await settings.locator('#preview').click();await settings.locator('#keep').click();

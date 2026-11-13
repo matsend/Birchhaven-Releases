@@ -6,3 +6,4 @@ choose.onclick=async()=>{try{render(await window.birchhavenClient.chooseInstalla
 start.onclick=async()=>{try{await window.birchhavenClient.start();}catch(error){message.textContent=error.message;}};
 
 document.getElementById('display').onclick=()=>window.birchhavenClient.displaySettings();
+document.getElementById('exit').onclick=async()=>{const button=document.getElementById('exit');button.disabled=true;try{await window.birchhavenClient.exit();}catch(error){message.textContent=error.message;}finally{button.disabled=false;}};

@@ -1,6 +1,7 @@
 'use strict';
 const {contextBridge,ipcRenderer}=require('electron');
 contextBridge.exposeInMainWorld('birchhavenClient',Object.freeze({
+ exit:()=>ipcRenderer.invoke('client:exit'),
  displaySettings:()=>ipcRenderer.invoke('client:display'),
  chooseInstallation:()=>ipcRenderer.invoke('client:choose'),
  start:()=>ipcRenderer.invoke('client:start'),

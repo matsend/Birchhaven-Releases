@@ -1,0 +1,80 @@
+name: Review Birchhaven reference artwork
+on:
+  push:
+    branches: [review/reference-art-8-2-0]
+concurrency:
+  group: birchhaven-reference-art-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: node --test release/test-read-patch.mjs desktop/tests/client.test.cjs desktop/tests/install.test.cjs desktop/tests/display.test.cjs
+      - run: node release/build-release.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-runtime
+          compression-level: 0
+          path: |
+            output/*.zip
+            output/*.bhupdate
+            output/*.json
+  windows:
+    needs: build
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - uses: actions/download-artifact@v4
+        with: {name: verified-runtime, path: output}
+      - name: Install runtime dependencies
+        shell: pwsh
+        run: |
+          $archive = (Get-ChildItem output/Birchhaven-Singleplayer-*.zip).FullName
+          Expand-Archive -LiteralPath $archive -DestinationPath output
+          npm ci --prefix output/Birchhaven-Singleplayer --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install pinned desktop build dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: npm ci --prefix desktop --no-audit --no-fund
+      - name: Verify official Electron and Node binaries
+        run: node release/prepare-desktop.mjs
+      - name: Build Windows installer
+        working-directory: desktop
+        env: {CSC_IDENTITY_AUTO_DISCOVERY: 'false'}
+        run: npx --no-install electron-builder --win --x64 --publish never
+      - name: Test installed Windows client
+        run: node desktop/tests/windows-smoke.cjs
+      - name: Test map delivery and save migration
+        shell: pwsh
+        run: |
+          $archive = (Get-ChildItem output/Birchhaven-Singleplayer-*.zip).FullName
+          Expand-Archive -LiteralPath $archive -DestinationPath smoke
+          Copy-Item -Recurse output/Birchhaven-Singleplayer/node_modules smoke/Birchhaven-Singleplayer/node_modules
+          node release/smoke.mjs smoke/Birchhaven-Singleplayer
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Seal desktop release receipt
+        run: node release/desktop-receipt.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-evidence
+          path: output/desktop-evidence/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-release
+          compression-level: 0
+          path: |
+            output/*.exe
+            output/*.bhupdate
+            output/*.json
