@@ -4,8 +4,8 @@
   "name": "Living Artwork",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "a2efa0eaa8596a35f1b8693f3c714db7a8042f821490432a0a27d7f0e6c09c3a",
+  "runtimeSha256": "266373bdf86e1d5d4c4419d4a22293503fd021882df4cd0d2370cb4883df2b29",
   "patch": "release/patches/8.2.0.json",
-  "patchSha256": "657076f12b9b8732b37fcffe535c7aead261ba56e27a1ffd2e7c47f662f28553",
+  "patchSha256": "7b0d5b0b134a241e148767562481cc80abcf32b6f7eea490a791ba99a4610924",
   "notes": "The approved town square, blacksmith and inn use their exact original artwork with separate walkable geometry and depth layers. Building entrances and indoor services follow the artwork; displaced saved positions are repaired without changing items or progress. Removed promotional login slogans. Added native Exit controls to startup, character selection and Settings, using the acknowledged save-and-close flow. Other environments retain their existing art and are not covered by this visual acceptance."
 }

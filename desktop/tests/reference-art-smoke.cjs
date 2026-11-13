@@ -19,34 +19,23 @@ module.exports=async function referenceArtSmoke(game,app,output){
   assert(result.meanRGBDifference<7&&result.changedFraction<.07,JSON.stringify(result));
  }
  try{
-  await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.unmaximize();w.webContents.setZoomFactor(1);w.setContentSize(1800,1200);});
-  await game.waitForFunction(()=>innerWidth===1800&&innerHeight===1200);
+  await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.unmaximize();w.webContents.setZoomFactor(1);w.setContentSize(2560,1920);});
+  await game.waitForFunction(()=>innerWidth===2560&&innerHeight===1920);
   assert(await game.evaluate(()=>p.z===0),'Art review starts in the real town session');
   // Review camera only: the actor, server session, collisions, rendering and
   // loaded original assets remain the real installed game. No image is substituted.
   await game.evaluate(()=>{window.__artReviewCamera=creatorCamera;creatorCamera=()=>{const s=ReferenceWorld.scenes.town;return{x:(s.x+768-24)/T,y:(s.y+512-24)/T};};});
   await capture('town');await game.evaluate(()=>{creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;});
+  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787')).setContentSize(1800,1200));
+  await game.waitForFunction(()=>innerWidth===1800&&innerHeight===1200);await settled();
   for(const key of ['BLACKSMITH','INN']){
    const door=await game.evaluate(key=>({...buildings.find(b=>b.name===key).door}),key);
    const routed=await game.evaluate(({x,y})=>{
-    const queue=[{x:p.x,y:p.y,steps:[]}];
-    const seen=new Set([p.x+','+p.y]);
+    route(x,y);
     const otherDoors=new Set(buildings.filter(b=>b.door.x!==x||b.door.y!==y).map(b=>b.door.x+','+b.door.y));
-    for(const position of queue){
-     if(position.x===x&&position.y===y){
-      path=position.steps;
-      return true;
-     }
-     for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){
-      const nx=position.x+dx,ny=position.y+dy,cell=nx+','+ny;
-      if(seen.has(cell)||otherDoors.has(cell)||!walkable(nx,ny)||occupied(nx,ny))continue;
-      seen.add(cell);
-      queue.push({x:nx,y:ny,steps:[...position.steps,[nx,ny]]});
-     }
-    }
-    return false;
+    return path.length>0&&path.at(-1)[0]===x&&path.at(-1)[1]===y&&path.every(([a,b])=>!otherDoors.has(a+','+b));
    },door);
-   assert(routed,'Walkable route to '+key+' avoiding other automatic entrances');
+   assert(routed,'Ordinary game route to '+key+' avoids other automatic entrances');
    console.log('Artwork review: walking to '+key,door);
    await game.waitForFunction(key=>p.z===3&&p.interior===key,key,{timeout:90000});await settled();
    const npc=await game.evaluate(()=>({...interiorNPCs()[0]}));
