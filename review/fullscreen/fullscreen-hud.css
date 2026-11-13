@@ -33,7 +33,7 @@ body.fullscreen-hud .hud-rail .container-content{max-height:50dvh}
 
 /* Square rendering and square hit testing use the unchanged 240px map backing. */
 body.fullscreen-hud .hud-minimap{flex:none;min-height:0;margin:0 2px;border:1px solid #8e743e;border-bottom:0;background:#08150f}
-body.fullscreen-hud .hud-map-heading{cursor:pointer;padding-inline:32px}
+body.fullscreen-hud .hud-rail .hud-map-heading{cursor:pointer;padding-inline:32px}
 body.fullscreen-hud .hud-map-heading>button{margin-left:0}
 body.fullscreen-hud .hud-map-heading small{color:#d3bd88}
 body.fullscreen-hud .hud-minimap.container-minimized #minimize-minimap svg{transform:rotate(-90deg)}

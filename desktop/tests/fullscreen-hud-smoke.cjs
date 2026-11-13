@@ -5,17 +5,21 @@ module.exports=async function fullscreenHudSmoke(game,app,out){
  async function capture(name){const data=await app.evaluate(async({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));return(await w.webContents.capturePage()).toPNG().toString('base64');});fs.writeFileSync(path.join(out,name+'.png'),Buffer.from(data,'base64'));}
  async function measure(label){const m=await game.evaluate(()=>{
   const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
-  return{width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,viewport:rect('.viewport'),canvas:rect('#game'),rail:rect('.hud-rail'),host:rect('.container-panels'),map:rect('#map'),energy:rect('.corner-orb-value.energy'),minimized:document.getElementById('hud-minimap-body').hidden,mapPrefs:JSON.parse(localStorage.getItem('birchhaven-fullscreen-hud-v1')||'{}'),characterCollapsed:containerPanelState.collapsed.character===true};
+  return{width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,viewport:rect('.viewport'),canvas:rect('#game'),rail:rect('.hud-rail'),host:rect('.container-panels'),map:rect('#map'),mapLabel:rect('.hud-map-heading>span'),mapToggle:rect('#minimize-minimap'),energy:rect('.corner-orb-value.energy'),minimized:document.getElementById('hud-minimap-body').hidden,mapPrefs:JSON.parse(localStorage.getItem('birchhaven-fullscreen-hud-v1')||'{}'),characterCollapsed:containerPanelState.collapsed.character===true};
  });m.label=label;measurements.push(m);
  assert(Math.abs(m.canvas.x)<1&&Math.abs(m.canvas.y)<1&&Math.abs(m.canvas.right-m.width)<1&&Math.abs(m.canvas.bottom-m.height)<1,'World reaches every viewport edge: '+label);
  assert(m.scrollWidth<=m.width+1&&m.scrollHeight<=m.height+1,'No external page scrolling: '+label);
  assert(m.rail.x>=0&&m.rail.right<=m.width+1&&m.rail.y>=0,'HUD stays inside viewport: '+label);
+ assert(m.mapLabel.x>=m.rail.x+40&&m.mapToggle.right<=m.rail.right-35,'Map title and toggle clear the leaf corners: '+label);
  const ornamentTop=m.height-m.width*(793-(396.5+268*.5))/1983;
  assert(m.rail.bottom<=ornamentTop-7,'All bags stop above the energy ornament: '+label);
  if(!m.minimized)assert(Math.abs(m.map.w-m.map.h)<1,'Map remains square: '+label);
  return m;
  }
  await game.waitForFunction(()=>document.body.classList.contains('fullscreen-hud'));
+ // SVG ornament images load outside the world canvas preparation gate. Wait for
+ // their actual assets so early captures cannot mistake loading for missing art.
+ await game.evaluate(async()=>{const sources=[...new Set([...document.querySelectorAll('.corner-orbs image')].map(n=>n.getAttribute('href')).filter(Boolean)),'assets/ui/leafbound-frame.png'];await Promise.all(sources.map(src=>new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>img.decode().then(resolve,reject);img.onerror=()=>reject(Error('HUD asset failed: '+src));img.src=src;})));});
  await game.evaluate(()=>{for(const id of [...containerPanelState.open])toggleContainerPanel(id,false);collapseContainerPanel('character',false);});
  if(await game.locator('#minimize-minimap').getAttribute('aria-expanded')!=='true')await game.locator('#minimize-minimap').click();
  for(const [w,h,z]of [[1280,720,1],[1920,1080,1],[2560,1440,1],[3440,1440,1],[1280,720,.85],[1920,1080,1.25]]){
