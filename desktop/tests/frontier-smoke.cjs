@@ -8,6 +8,14 @@ module.exports=async function frontierSmoke(game,output){
  assert.deepEqual(bossRegistration.actual,bossRegistration.expected,'Every authored frontier boss is registered');
  const bossCrops=await game.evaluate(()=>TowerCampaignAssets.boss.rects);
  assert.deepEqual(bossCrops,[[80,5,246,354],[461,5,167,355],[814,5,208,355],[1189,6,184,353],[41,366,327,328],[447,367,198,326],[739,367,320,327],[1185,367,200,327],[7,698,365,366],[397,701,286,364],[764,698,321,363],[1147,701,279,366]],'Installed boss atlas uses reviewed full-body crops');
+ // Character creation can finish before the first visible-page audio gesture.
+ // Exercise the real music control before asking its decoder for all tracks.
+ await game.bringToFront();
+ await game.waitForFunction(()=>!document.hidden);
+ const musicToggle=game.locator('#music-toggle');
+ if(await musicToggle.getAttribute('aria-pressed')==='true')await musicToggle.click();
+ await musicToggle.click();
+ await game.waitForFunction(()=>music.unlocked&&music.context?.state==='running',{},{timeout:30000});
  const audio=await game.evaluate(async()=>{const durations={};for(const key of Object.keys(musicTracks))durations[key]=(await musicBuffer(key)).duration;return durations;});
  assert(Object.values(audio).every(n=>n>=30));
  // Use ordinary route movement and UI buttons against the local authoritative server.
@@ -35,5 +43,5 @@ module.exports=async function frontierSmoke(game,output){
  assert(reward,'A real quest item reaches the actual backpack');
  if(await game.locator('#modal').evaluate(e=>e.open))await game.locator('#close').click();
  fs.writeFileSync(path.join(output,'frontier-verification.json'),JSON.stringify({inventory,audio,quest:'fr_01',reward:reward.baseId,checks:['actual window route movement','NPC dialogue','server-backed quest acceptance','physical harvest','server-backed quest reward','Vorbis decoding in Electron'],limitations:['Not a complete campaign playthrough','No subjective listening review']},null,2));
- console.log('PASS: frontier counts, real first quest/harvest/reward and all 16 audio decodes.');
+ console.log('PASS: frontier counts, real first quest/harvest/reward, music control and all 16 audio decodes.');
 };
