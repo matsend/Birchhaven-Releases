@@ -1,7 +1,11 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 module.exports=async function frontierSmoke(game,output){
- const inventory=await game.evaluate(()=>({sets:FrontierGear.sets.length,equipment:Object.values(Gear.templates).filter(t=>t.frontier).length,npcs:FrontierPlan.npcs.length,quests:frontierQuests.length,floors:Object.values(adventureZones).filter(d=>FrontierDungeons[d.key]).length,bosses:enemies.filter(e=>e.frontierBoss).length,music:Object.keys(musicTracks).length,version:gameRelease.version}));
+ // The live enemy array is replaced by the active zone snapshot. Count registered
+ // boss types across all dungeons, independently of whether town sync has arrived.
+ const inventory=await game.evaluate(()=>({sets:FrontierGear.sets.length,equipment:Object.values(Gear.templates).filter(t=>t.frontier).length,npcs:FrontierPlan.npcs.length,quests:frontierQuests.length,floors:Object.values(adventureZones).filter(d=>FrontierDungeons[d.key]).length,bosses:Object.values(types).filter(t=>t.frontierBoss).length,music:Object.keys(musicTracks).length,version:gameRelease.version}));
  assert.deepEqual(inventory,{sets:12,equipment:89,npcs:15,quests:39,floors:6,bosses:6,music:16,version:require('../package.json').version});
+ const bossRegistration=await game.evaluate(()=>({actual:Object.values(types).filter(t=>t.frontierBoss).map(t=>t.frontierBoss).sort(),expected:Object.values(FrontierDungeons).flatMap(d=>d.bosses.map(b=>b[0])).sort()}));
+ assert.deepEqual(bossRegistration.actual,bossRegistration.expected,'Every authored frontier boss is registered');
  const bossCrops=await game.evaluate(()=>TowerCampaignAssets.boss.rects);
  assert.deepEqual(bossCrops,[[80,5,246,354],[461,5,167,355],[814,5,208,355],[1189,6,184,353],[41,366,327,328],[447,367,198,326],[739,367,320,327],[1185,367,200,327],[7,698,365,366],[397,701,286,364],[764,698,321,363],[1147,701,279,366]],'Installed boss atlas uses reviewed full-body crops');
  const audio=await game.evaluate(async()=>{const durations={};for(const key of Object.keys(musicTracks))durations[key]=(await musicBuffer(key)).duration;return durations;});
