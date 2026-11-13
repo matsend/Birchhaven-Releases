@@ -1,13 +1,13 @@
 {
   "format": 2,
   "version": "8.2.0",
-  "size": 39222409,
-  "sha256": "c0277fd12176ed7d511094333cff8be1c7b4ccbc28ef6825f00fe49420231096",
+  "size": 39222505,
+  "sha256": "e9aca30c27e1c961d613235091b9e626dcbddee45eeb40aa8a821ae18f54bc84",
   "parts": [
     {
       "name": "8.2.0.part-001",
       "size": 131072,
-      "sha256": "1b01bb823576efdad25437cedda133cbec8a7ed8fac8a17e12f8cca717e90dd2"
+      "sha256": "2014f3b96bde5b0ff772b0ed9187534a1f656de3c4bf8ebe0f104c3c0a2e245e"
     },
     {
       "name": "8.2.0.part-002",
@@ -1472,42 +1472,42 @@
     {
       "name": "8.2.0.part-294",
       "size": 131072,
-      "sha256": "7026b4750baa8a4753eaa80dc907554454d1d082cb29da7a58886f88fbc8b460"
+      "sha256": "d34706958da1f6a77dbe6006889a4aec111122e4f702f7c7f1fed8f3628bb9f0"
     },
     {
       "name": "8.2.0.part-295",
       "size": 131072,
-      "sha256": "38968c50907956bae495a108037180c9b1f96f10ac285681e7213ca03d08179a"
+      "sha256": "900e87871deda21004f34d3118f8fa95de4c0c4e31f9b36eab6e8ccb0379c3d2"
     },
     {
       "name": "8.2.0.part-296",
       "size": 131072,
-      "sha256": "2892a05762d8be75e2f03bd9f8b3590bb8015e0b96882f850b4d2e5e1e48ddc7"
+      "sha256": "de87a42b25fe65683a5bcf51c4119bf967495e26c76adc1cfe1759461fbcdd27"
     },
     {
       "name": "8.2.0.part-297",
       "size": 131072,
-      "sha256": "f48511ffbdd0a5deb6a863313ee56cafbf26ef8a57b246f81307e3994717cc5e"
+      "sha256": "ce20cc271ac3dbfe14dc36c7c61938b1b0ce2ab7658413cbb0e2633c5ee90262"
     },
     {
       "name": "8.2.0.part-298",
       "size": 131072,
-      "sha256": "dd34005f92cb36afcdcbb399e25a97701e3c721d19e38f349f9ca4b07b34545c"
+      "sha256": "2428b583ab27e864979fd1ac988729cb3b2d4b7b35307ab4871b72ce47e9f834"
     },
     {
       "name": "8.2.0.part-299",
       "size": 131072,
-      "sha256": "065cea3171fe202bee391a8566c9f27cae423242c44563e438eba34695e9813a"
+      "sha256": "c1988c07b00f5597b23f35f88f5a623c57d1301c3bbd235efbb9ea2624f55358"
     },
     {
       "name": "8.2.0.part-300",
       "size": 131072,
-      "sha256": "8d4c8c43237ecbab75cb980a9ce23351578e97bcade29a921a7f421351019711"
+      "sha256": "dcc86b8b960e03071256571564837db427dfd5dc984ccc8a6bc5833d3bb913e8"
     },
     {
       "name": "8.2.0.part-301",
-      "size": 129343,
-      "sha256": "9fc4294f1992606244b27ebc0991710e440a6a108c24857ccf40a9720cd6fd8d"
+      "size": 129439,
+      "sha256": "c13338886e6b3916821ea0cfbffde8f5e6cdd1d2fee546e9b54cbc6c779fbb43"
     }
   ]
 }

@@ -26,8 +26,6 @@ module.exports=async function referenceArtSmoke(game,app,output){
   // loaded original assets remain the real installed game. No image is substituted.
   await game.evaluate(()=>{window.__artReviewCamera=creatorCamera;creatorCamera=()=>{const s=ReferenceWorld.scenes.town;return{x:(s.x+768-24)/T,y:(s.y+512-24)/T};};});
   await capture('town');await game.evaluate(()=>{creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;});
-  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787')).setContentSize(1800,1200));
-  await game.waitForFunction(()=>innerWidth===1800&&innerHeight===1200);await settled();
   for(const key of ['BLACKSMITH','INN']){
    const door=await game.evaluate(key=>({...buildings.find(b=>b.name===key).door}),key);
    const routed=await game.evaluate(({x,y})=>{
