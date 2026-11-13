@@ -12,10 +12,12 @@ module.exports=async function frontierSmoke(game,output){
  // Exercise the real music control before asking its decoder for all tracks.
  await game.bringToFront();
  await game.waitForFunction(()=>!document.hidden);
+ await game.locator('#settings').click();
  const musicToggle=game.locator('#music-toggle');
  if(await musicToggle.getAttribute('aria-pressed')==='true')await musicToggle.click();
  await musicToggle.click();
  await game.waitForFunction(()=>music.unlocked&&music.context?.state==='running',{},{timeout:30000});
+ await game.locator('#settingsclose').click();
  const audio=await game.evaluate(async()=>{const durations={};for(const key of Object.keys(musicTracks))durations[key]=(await musicBuffer(key)).duration;return durations;});
  assert(Object.values(audio).every(n=>n>=30));
  // Use ordinary route movement and UI buttons against the local authoritative server.
