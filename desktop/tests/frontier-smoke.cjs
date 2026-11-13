@@ -9,11 +9,10 @@ module.exports=async function frontierSmoke(game,output){
   {zone:310,boss:'mireglass_charm'},{zone:311,boss:'adder_signet'},
   {zone:320,boss:'citadel_seal'},{zone:321,boss:'usurper_ring'}
  ]);
- // Unlock audio through the visible client controls before requesting decoded buffers.
+ // A real click in the visible game canvas unlocks music; the music controls may be collapsed.
  await game.bringToFront();
  await game.waitForFunction(()=>!document.hidden,{},{timeout:30000});
- await game.locator('#music-toggle').click();
- if(await game.locator('#music-toggle').getAttribute('aria-pressed')==='false')await game.locator('#music-toggle').click();
+ await game.locator('#game').click();
  await game.waitForFunction(()=>music.unlocked&&music.context?.state==='running',{},{timeout:30000});
  const audio=await game.evaluate(async()=>{const durations={};for(const key of Object.keys(musicTracks))durations[key]=(await musicBuffer(key)).duration;return durations;});
  assert(Object.values(audio).every(n=>n>=30));
