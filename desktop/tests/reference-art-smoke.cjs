@@ -28,7 +28,26 @@ module.exports=async function referenceArtSmoke(game,app,output){
   await capture('town');await game.evaluate(()=>{creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;});
   for(const key of ['BLACKSMITH','INN']){
    const door=await game.evaluate(key=>({...buildings.find(b=>b.name===key).door}),key);
-   await game.evaluate(({x,y})=>route(x,y),door);
+   const routed=await game.evaluate(({x,y})=>{
+    const queue=[{x:p.x,y:p.y,steps:[]}];
+    const seen=new Set([p.x+','+p.y]);
+    const otherDoors=new Set(buildings.filter(b=>b.door.x!==x||b.door.y!==y).map(b=>b.door.x+','+b.door.y));
+    for(const position of queue){
+     if(position.x===x&&position.y===y){
+      path=position.steps;
+      return true;
+     }
+     for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){
+      const nx=position.x+dx,ny=position.y+dy,cell=nx+','+ny;
+      if(seen.has(cell)||otherDoors.has(cell)||!walkable(nx,ny)||occupied(nx,ny))continue;
+      seen.add(cell);
+      queue.push({x:nx,y:ny,steps:[...position.steps,[nx,ny]]});
+     }
+    }
+    return false;
+   },door);
+   assert(routed,'Walkable route to '+key+' avoiding other automatic entrances');
+   console.log('Artwork review: walking to '+key,door);
    await game.waitForFunction(key=>p.z===3&&p.interior===key,key,{timeout:90000});await settled();
    const npc=await game.evaluate(()=>({...interiorNPCs()[0]}));
    await walk(npc.x-1,npc.y+1);await capture(key.toLowerCase());
