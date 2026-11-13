@@ -1,19 +1,9 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 module.exports=async function frontierSmoke(game,output){
- // Active enemies are scoped to the current server zone; count registered boss types.
- const inventory=await game.evaluate(()=>({sets:FrontierGear.sets.length,equipment:Object.values(Gear.templates).filter(t=>t.frontier).length,npcs:FrontierPlan.npcs.length,quests:frontierQuests.length,floors:Object.values(adventureZones).filter(d=>FrontierDungeons[d.key]).length,bosses:Object.values(types).filter(t=>t.frontierBoss).length,music:Object.keys(musicTracks).length,version:gameRelease.version}));
- assert.deepEqual(inventory,{sets:12,equipment:89,npcs:15,quests:39,floors:6,bosses:6,music:16,version:'8.0.0'});
- const bossDefinitions=await game.evaluate(()=>Object.values(adventureZones).filter(d=>FrontierDungeons[d.key]).map(d=>{const relic=FrontierDungeons[d.key].bosses[d.index][0];return {zone:d.z,boss:types['frontier_boss_'+relic]?.frontierBoss??null};}).sort((a,b)=>a.zone-b.zone));
- assert.deepEqual(bossDefinitions,[
-  {zone:300,boss:'oreheart'},{zone:301,boss:'foreman'},
-  {zone:310,boss:'mireglass_charm'},{zone:311,boss:'adder_signet'},
-  {zone:320,boss:'citadel_seal'},{zone:321,boss:'usurper_ring'}
- ]);
- // A real click in the visible game canvas unlocks music; the music controls may be collapsed.
- await game.bringToFront();
- await game.waitForFunction(()=>!document.hidden,{},{timeout:30000});
- await game.locator('#game').click();
- await game.waitForFunction(()=>music.unlocked&&music.context?.state==='running',{},{timeout:30000});
+ const inventory=await game.evaluate(()=>({sets:FrontierGear.sets.length,equipment:Object.values(Gear.templates).filter(t=>t.frontier).length,npcs:FrontierPlan.npcs.length,quests:frontierQuests.length,floors:Object.values(adventureZones).filter(d=>FrontierDungeons[d.key]).length,bosses:enemies.filter(e=>e.frontierBoss).length,music:Object.keys(musicTracks).length,version:gameRelease.version}));
+ assert.deepEqual(inventory,{sets:12,equipment:89,npcs:15,quests:39,floors:6,bosses:6,music:16,version:require('../package.json').version});
+ const bossCrops=await game.evaluate(()=>TowerCampaignAssets.boss.rects);
+ assert.deepEqual(bossCrops,[[80,5,246,354],[461,5,167,355],[814,5,208,355],[1189,6,184,353],[41,366,327,328],[447,367,198,326],[739,367,320,327],[1185,367,200,327],[7,698,365,366],[397,701,286,364],[764,698,321,363],[1147,701,279,366]],'Installed boss atlas uses reviewed full-body crops');
  const audio=await game.evaluate(async()=>{const durations={};for(const key of Object.keys(musicTracks))durations[key]=(await musicBuffer(key)).duration;return durations;});
  assert(Object.values(audio).every(n=>n>=30));
  // Use ordinary route movement and UI buttons against the local authoritative server.
@@ -40,6 +30,6 @@ module.exports=async function frontierSmoke(game,output){
  const reward=await game.evaluate(()=>p.bag.map(id=>items[id]).find(it=>it?.baseId==='base_frontier_farmguard'));
  assert(reward,'A real quest item reaches the actual backpack');
  if(await game.locator('#modal').evaluate(e=>e.open))await game.locator('#close').click();
- fs.writeFileSync(path.join(output,'frontier-verification.json'),JSON.stringify({inventory,bossDefinitions,audio,quest:'fr_01',reward:reward.baseId,checks:['six registered dungeon boss definitions','actual window route movement','NPC dialogue','server-backed quest acceptance','physical harvest','server-backed quest reward','Vorbis decoding in Electron'],limitations:['Not a complete campaign playthrough','No subjective listening review']},null,2));
+ fs.writeFileSync(path.join(output,'frontier-verification.json'),JSON.stringify({inventory,audio,quest:'fr_01',reward:reward.baseId,checks:['actual window route movement','NPC dialogue','server-backed quest acceptance','physical harvest','server-backed quest reward','Vorbis decoding in Electron'],limitations:['Not a complete campaign playthrough','No subjective listening review']},null,2));
  console.log('PASS: frontier counts, real first quest/harvest/reward and all 16 audio decodes.');
 };

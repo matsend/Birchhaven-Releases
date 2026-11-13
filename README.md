@@ -2,7 +2,7 @@
 
 **[Hämta Windows-klienten](https://github.com/matsend/Birchhaven-Releases/releases/latest)**
 
-1. Hämta `Birchhaven-Setup-7.23.1-x64.exe` under Assets.
+1. Hämta `Birchhaven-Setup-<version>-x64.exe` under Assets.
 2. Kör installationen.
 3. Starta **Birchhaven** från skrivbordet eller Start-menyn.
 
@@ -26,7 +26,7 @@ Välj **Sök efter uppdateringar** i spelets inställningar. Klienten hämtar n�
 
 ## Innehåll
 
-7.23.1 innehåller det publicerade spelinnehållet från 7.22.2 och den nya Windows-klienten. Expansionen 8.0.0 med nya set, föremål och uppdrag är fortfarande en separat, opublicerad arbetsversion.
+8.0.0 Living Frontiers är publicerad: 12 set, 89 utrustningsföremål, 11 mat-/råvarutyper, 39 uppdrag, sex nya dungeonvåningar och 16 musikspår. 8.0.1 Clean Silhouettes rättar bossarnas bildutsnitt i Orc Tower. Fullständiga gång- och stridsanimationer i åtta riktningar och egna rustningssilhuetter är fortfarande utvecklingsarbete. Senaste färdigtestade installation finns under Releases.
 
 World Creator **Spara och synka** finns kvar. Spel och lokala sparningar fungerar utan internet; synkning och uppdateringar kräver internet. Kartöverföringen innehåller inte karaktärernas framsteg.
 
