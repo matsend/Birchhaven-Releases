@@ -1,0 +1,29 @@
+name: Birchhaven fullscreen HUD review
+on:
+  push:
+    branches: [review/fullscreen-hud]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  visual:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-release
+          path: output/desktop
+          run-id: 43431198739
+          github-token: '${{ github.token }}'
+      - name: Install test driver
+        env: {ELECTRON_SKIP_BINARY_DOWNLOAD: '1', PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'}
+        run: npm ci --prefix desktop --no-audit --no-fund
+      - name: Review candidate HUD in installed Windows client
+        run: node desktop/tests/fullscreen-review.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: fullscreen-review-evidence, path: output/fullscreen-review, retention-days: 30}

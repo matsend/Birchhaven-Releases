@@ -1,0 +1,57 @@
+/* Concept 3: one edge-to-edge world, a joined leaf frame and a bounded bag rail. */
+html:has(body.fullscreen-hud),body.fullscreen-hud{width:100%;height:100%;overflow:hidden}
+body.fullscreen-hud main,body.fullscreen-hud main:has(.container-sidebar){position:fixed;inset:0;display:block;width:100%;height:100dvh;max-width:none;margin:0;padding:0;gap:0}
+body.fullscreen-hud main>section{width:100%;height:100%;min-width:0;min-height:0}
+body.fullscreen-hud .game-shell{position:relative;width:100%;height:100%;border:0;box-shadow:none;overflow:hidden}
+body.fullscreen-hud .game-shell:after,body.fullscreen-hud .game-shell:before{display:none}
+body.fullscreen-hud .game-shell>.viewport{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-height:none;aspect-ratio:auto;border:0;contain:size layout}
+body.fullscreen-hud .game-shell>.viewport>#game{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-height:none}
+body.fullscreen-hud .world-status{position:absolute;inset:0 0 auto;min-height:34px;padding:4px 10px;z-index:30;background:#07130eed;border-top:1px solid #a48649;border-bottom:1px solid #a48649}
+body.fullscreen-hud footer{display:none}
+
+/* The stack can grow only above the energy ornament; excess bags scroll here. */
+body.fullscreen-hud aside.container-sidebar.hud-rail{position:absolute;top:var(--hud-top,42px);right:5px;bottom:auto;width:280px;max-width:calc(100% - 16px);max-height:calc(100% - var(--hud-top,42px) - var(--hud-bottom,190px));height:auto;min-height:0;margin:0;padding:9px 9px 36px;display:flex;flex-direction:column;gap:0;overflow:hidden;align-self:auto;border:0;background:#08150fed;box-shadow:none;z-index:12;isolation:isolate}
+body.fullscreen-hud .hud-rail:after{content:'';position:absolute;inset:0;z-index:20;border:42px solid transparent;border-image:url('assets/ui/leafbound-frame.png') 220 / 42px / 0 stretch;pointer-events:none}
+body.fullscreen-hud .hud-rail>.container-panels{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:3px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#8e7948 #09170f;padding:0 2px 2px}
+body.fullscreen-hud .hud-rail .container-panel{flex:none;border:1px solid #8e743e;background:#0b1812ef;box-shadow:none}
+body.fullscreen-hud .hud-rail .character-panel{order:-1;border-top:0}
+body.fullscreen-hud .hud-rail .character-panel>.container-heading{cursor:pointer}
+body.fullscreen-hud .hud-rail .character-panel>.container-resize{display:none!important}
+body.fullscreen-hud .hud-rail .character-panel>.container-content{height:auto!important;max-height:none;overflow:visible;padding:6px}
+body.fullscreen-hud .hud-rail .character-panel>.container-content[hidden]{display:none!important}
+body.fullscreen-hud aside.container-sidebar .hero{padding:0 0 7px;margin:0 0 7px;border:0;border-bottom:1px solid #8e743e80;background:transparent;box-shadow:none}
+body.fullscreen-hud .hud-rail .hero .identity .hero-portrait{width:46px;height:51px}
+body.fullscreen-hud .hud-rail .hero .identity h2{font-size:16px}
+body.fullscreen-hud .hud-rail .hero .hero-currency{font-size:9px;padding-top:4px}
+body.fullscreen-hud .hud-rail .experience-track{margin-top:5px;height:12px}
+body.fullscreen-hud .hud-rail .experience-track>span{line-height:10px}
+body.fullscreen-hud .hud-rail .container-character-body{gap:5px}
+body.fullscreen-hud .hud-rail .container-controls{min-width:60px;width:70px;flex-basis:70px}
+body.fullscreen-hud .hud-rail .container-heading{height:25px;padding:0 6px;gap:5px}
+body.fullscreen-hud .hud-rail .container-heading button{width:23px;height:23px;min-width:23px}
+body.fullscreen-hud .hud-rail .container-content{max-height:50dvh}
+
+/* Square rendering and square hit testing use the unchanged 240px map backing. */
+body.fullscreen-hud .hud-minimap{flex:none;min-height:0;margin:0 2px;border:1px solid #8e743e;border-bottom:0;background:#08150f}
+body.fullscreen-hud .hud-map-heading{cursor:pointer;padding-inline:32px}
+body.fullscreen-hud .hud-map-heading>button{margin-left:0}
+body.fullscreen-hud .hud-map-heading small{color:#d3bd88}
+body.fullscreen-hud .hud-minimap.container-minimized #minimize-minimap svg{transform:rotate(-90deg)}
+body.fullscreen-hud #hud-minimap-body[hidden]{display:none}
+body.fullscreen-hud .hud-rail .mapbox.corner-map{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:1;padding:0;margin:0;border:0;background:transparent;box-shadow:none;overflow:hidden;z-index:auto}
+body.fullscreen-hud .hud-rail .mapbox.corner-map:after{display:none}
+body.fullscreen-hud .hud-rail .mapbox.corner-map canvas{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);border:1px solid #b89952;border-radius:0;clip-path:none;pointer-events:auto}
+body.fullscreen-hud .hud-rail .mapbox.corner-map .minimap-compass{display:none}
+body.fullscreen-hud .hud-rail .mapbox.corner-map .mini-zoom-controls{position:absolute;top:auto;bottom:9px;left:50%;right:auto;transform:translateX(-50%);display:flex;gap:4px;z-index:3}
+body.fullscreen-hud .hud-rail .mini-zoom-controls button,body.fullscreen-hud .hud-rail .mapbox.corner-map #expandmap{width:24px;height:24px;min-width:24px;border-radius:2px;background:#0a1b11e8}
+body.fullscreen-hud .hud-rail .mini-zoom-controls #mini-zoom-value{width:35px;border-radius:2px}
+
+/* Keep the approved half-size resource ornaments and the user's 75% hotbar. */
+body.fullscreen-hud .corner-orbs{left:0;right:0;bottom:0}
+body.fullscreen-hud .action-dock{bottom:4px}
+body.fullscreen-hud .hud-adventure-log{position:absolute;left:8px;bottom:calc(13.25cqw + 10px);width:340px;max-width:32%;max-height:96px;z-index:8;margin:0;border:1px solid #8e743e66;background:#07130e9c;border-radius:2px;opacity:.88}
+body.fullscreen-hud .hud-adventure-log .journalhead{padding:4px 7px;font-size:9px;background:#07130e66}
+body.fullscreen-hud .hud-adventure-log .journalhead span{display:none}
+body.fullscreen-hud .hud-adventure-log #log{height:62px;max-height:62px;font-size:10px;line-height:1.4;padding:4px 7px;background:transparent}
+@media(max-height:800px){body.fullscreen-hud aside.container-sidebar.hud-rail{width:260px;padding:7px 7px 32px}body.fullscreen-hud .hud-rail:after{border-width:36px;border-image-width:36px}body.fullscreen-hud .hud-rail .container-content{padding:4px}body.fullscreen-hud .hud-rail .character-panel>.container-content{padding:4px}body.fullscreen-hud .hud-rail .container-controls{min-width:57px;width:61px;flex-basis:61px}}
+@media(max-height:600px){body.fullscreen-hud aside.container-sidebar.hud-rail{width:250px}body.fullscreen-hud .hud-rail .mapbox.corner-map{max-height:170px;aspect-ratio:auto;height:170px}body.fullscreen-hud .hud-rail .mapbox.corner-map canvas{width:158px;height:158px;left:calc(50% - 79px)}body.fullscreen-hud .world-status{font-size:10px}body.fullscreen-hud .hud-adventure-log{max-height:65px}body.fullscreen-hud .hud-adventure-log #log{height:38px}}
