@@ -32,10 +32,12 @@ test('multipart patches reject missing, altered, reordered and out-of-directory 
   assert.throws(()=>readPatch(file, '0'.repeat(64),patch.version),/checksum/);
   assert.throws(()=>readPatch(file,write({...index,parts:[...index.parts].reverse()}),patch.version),/Invalid patch part/);
   assert.throws(()=>readPatch(file,write({...index,parts:[{...index.parts[0],name:'../outside'},index.parts[1]]}),patch.version),/Invalid patch part/);
-  assert.throws(()=>readPatch(file,write({...index,size:41*1024*1024}),patch.version),/Invalid multipart/);
+  assert.throws(()=>readPatch(file,write({...index,size:97*1024*1024}),patch.version),/Invalid multipart/);
+  assert.throws(()=>readPatch(file,write({...index,parts:Array(769).fill(index.parts[0])}),patch.version),/Invalid multipart/);
   assert.throws(()=>readPatch(file,write({...index,sha256:'0'.repeat(64)}),patch.version),/Joined patch checksum/);
   fs.writeFileSync(path.join(dir,index.parts[0].name),'altered');
   assert.throws(()=>readPatch(file,write(index),patch.version),/Patch part checksum/);
   fs.unlinkSync(path.join(dir,index.parts[0].name));
   assert.throws(()=>readPatch(file,write(index),patch.version),/ENOENT/);
 });
+

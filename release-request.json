@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "version": "8.2.0",
-  "name": "Living Artwork",
+  "version": "8.4.0",
+  "name": "Living Grounds",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "ab3536f301ee379692e09a40a4304af0ef1760215b4ee1872efb6df0e2832192",
-  "patch": "release/patches/8.2.0.json",
-  "patchSha256": "20a46882cb6931da9d805b68cdb5364dc1dfb89ab3e4ddfbdf73a08ada5039b8",
-  "notes": "The approved town square, blacksmith and inn use their exact original artwork with separate walkable geometry and depth layers. Building entrances and indoor services follow the artwork; displaced saved positions are repaired without changing items or progress. Removed promotional login slogans. Added native Exit controls to startup, character selection and Settings, using the acknowledged save-and-close flow. Other environments retain their existing art and are not covered by this visual acceptance."
+  "runtimeSha256": "94742f22b5439ac5f6d8ffcf7ebdaee8667b88eb99074069e950e3b3a06c9a32",
+  "patch": "release/patches/8.4.0.json",
+  "patchSha256": "d6b34383b15bfa7bca1484be52890fc0ed1f5d22a1afa93ce9562c9897cffb0d",
+  "notes": "Added original-pixel fire, water, waterfall, light and small sail/leaf animation masks for the thirteen reference scenes. The churchyard gate opens as the player approaches; brazier occlusion follows tighter silhouettes. Added painted connection strips between church/town and town/harbour while retaining every original image unchanged. Continuous full-scale painted ground replaces compressed tile miniatures; dungeon floor sampling keeps each campaign theme. Private development candidate. Full exterior perimeter integration, all dungeon architecture and installed Windows acceptance are not yet complete."
 }

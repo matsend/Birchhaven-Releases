@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 module.exports=async function referenceArtSmoke(game,app,output){
- const evidence={status:'awaiting-manual-side-by-side-review',scenes:[],checks:[],limitations:['Exact originals exist for town, blacksmith and inn only.','Browser resampling, live characters and gameplay markers differ from a still reference.','This automated gate does not grant visual acceptance.']};
+ const evidence={status:'awaiting-manual-side-by-side-review',scenes:[],checks:[],limitations:['Thirteen exact reference originals; deeper campaigns are not covered by their acceptance.','Browser resampling, live characters, animated masks and gameplay markers differ from a still reference.','This automated gate does not grant visual acceptance.']};
  const original=await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));return{size:w.getContentSize(),zoom:w.webContents.getZoomFactor()};});
  async function settled(){await game.waitForFunction(()=>started&&!worldPreparation.busy&&ReferenceSceneArt.ready(ReferenceWorld.active()),{},{timeout:90000});await game.waitForTimeout(400);}
  async function walk(x,y){assert(await game.evaluate(({x,y})=>{if(!walkable(x,y))return false;route(x,y);return true;},{x,y}));await game.waitForFunction(({x,y})=>p.x===x&&p.y===y,{x,y},{timeout:90000});await settled();}
@@ -46,7 +46,19 @@ module.exports=async function referenceArtSmoke(game,app,output){
    }
    await game.evaluate(()=>route(7,11));await game.waitForFunction(()=>p.z===0&&!p.interior,{},{timeout:90000});await settled();
   }
-  evidence.checks.push('Actual installed game screenshots','Original image pixel comparison','Ordinary route movement into and out of both buildings','Existing NPC services','Actor behind/in front of anvil');
+  // Exercise the expansion through real routes and automatic doors. No
+  // screenshot substitute, actor teleport or disabled server authority.
+  async function exterior(key,x,y){await walk(x,y);await game.screenshot({path:path.join(output,'art-'+key+'-ordinary-camera.png')});await game.evaluate(key=>{window.__artReviewCamera=creatorCamera;creatorCamera=()=>{const s=ReferenceWorld.scenes[key];return{x:(s.x+768*s.scale-24)/T,y:(s.y+512*s.scale-24)/T};};},key);try{await capture(key);}finally{await game.evaluate(()=>{creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;});}}
+  async function doorRoom(key){await game.evaluate(key=>{const b=buildings.find(b=>b.name===key);route(b.door.x,b.door.y);},key);await game.waitForFunction(key=>p.z===3&&p.interior===key,key,{timeout:90000});await capture(key.toLowerCase());await game.evaluate(()=>route(7,11));await game.waitForFunction(()=>p.z===0&&!p.interior,{},{timeout:90000});await settled();}
+  const cd=await game.evaluate(()=>({...churchBuilding.door}));await exterior('churchExterior',cd.x,cd.y+1);await doorRoom('CHURCH');
+  await exterior('cemetery',55,18);assert(await game.evaluate(()=>ReferenceMotion.gateAmount>.9),'churchyard gate opens before passage');
+  await game.evaluate(()=>route(stairsSurface.x,stairsSurface.y));await game.waitForFunction(()=>p.z===400,{},{timeout:90000});await capture('crypt-hall');await game.evaluate(()=>{const s=ReferenceWorld.scenes.crypt;route(s.up.x,s.up.y)});await game.waitForFunction(()=>p.z===0,{},{timeout:90000});
+  await exterior('harbour',18,59);await doorRoom('BOAT');
+  for(const [key,exteriorKey,z]of [['orc','orcExterior',401],['dragon','dragonExterior',402]]){
+   const at=await game.evaluate(key=>({x:adventures[key].x,y:adventures[key].y+1}),key);await exterior(exteriorKey,at.x,at.y);await game.evaluate(key=>enterAdventure(key),key);await game.waitForFunction(z=>p.z===z,z,{timeout:30000});await capture(key+'-hall');await game.evaluate(()=>{const s=ReferenceWorld.active();route(s.up.x,s.up.y)});await game.waitForFunction(()=>p.z===0,{},{timeout:90000});
+  }
+  await walk(22,29);
+  evidence.checks.push('Actual installed game screenshots of all thirteen scenes','Original image pixel comparison','Ordinary movement through town, churchyard, harbour, tower and cave approaches','Existing NPC services','Actor behind/in front of anvil','Proximity gate opening','Automatic doors and vestibule return trips');
   console.log('PASS: installed artwork scenes, original-image comparison, real doors, room paths and services. Manual side-by-side acceptance still required.');
  }finally{
   await game.evaluate(()=>{if(window.__artReviewCamera){creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;}}).catch(()=>{});
