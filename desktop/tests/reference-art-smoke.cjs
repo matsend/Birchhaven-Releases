@@ -3,7 +3,15 @@ module.exports=async function referenceArtSmoke(game,app,output){
  const evidence={status:'awaiting-manual-side-by-side-review',scenes:[],checks:[],limitations:['Thirteen exact reference originals; deeper campaigns are not covered by their acceptance.','Browser resampling, live characters, animated masks and gameplay markers differ from a still reference.','This automated gate does not grant visual acceptance.']};
  const original=await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));return{size:w.getContentSize(),zoom:w.webContents.getZoomFactor()};});
  async function settled(){await game.waitForFunction(()=>started&&!worldPreparation.busy&&ReferenceSceneArt.ready(ReferenceWorld.active()),{},{timeout:90000});await game.waitForTimeout(400);}
- async function walk(x,y){assert(await game.evaluate(({x,y})=>{if(!walkable(x,y))return false;route(x,y);return true;},{x,y}));await game.waitForFunction(({x,y})=>p.x===x&&p.y===y,{x,y},{timeout:90000});await settled();}
+ async function walk(x,y){
+  console.log('Artwork route',x,y);assert(await game.evaluate(({x,y})=>{if(!walkable(x,y))return false;route(x,y);return true;},{x,y}));
+  const deadline=Date.now()+90000;
+  for(;;){const state=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,dead:p.dead,hp:p.hp}));assert(!state.dead,'Review character died on route to '+x+','+y);if(state.x===x&&state.y===y)break;assert(Date.now()<deadline,'Route timed out: '+JSON.stringify({target:{x,y},state}));
+   if(evidence.wildernessFixture)await game.evaluate(({x,y})=>{if(paused()||casting)return;if(p.hp<maxhp()*.6)castHeal();else if(enemies.some(e=>!e.dead&&e.z===p.z&&dist(p,e)<=1))hit();if(!path.length&&!casting)route(x,y);},{x,y});
+   await game.waitForTimeout(500);
+  }
+  await settled();
+ }
  async function capture(label){
   await settled();await game.screenshot({path:path.join(output,'art-'+label+'-game.png')});
   const result=await game.evaluate(()=>{
@@ -54,6 +62,24 @@ module.exports=async function referenceArtSmoke(game,app,output){
   await exterior('cemetery',55,18);assert(await game.evaluate(()=>ReferenceMotion.gateAmount>.9),'churchyard gate opens before passage');
   await game.evaluate(()=>route(stairsSurface.x,stairsSurface.y));await game.waitForFunction(()=>p.z===400,{},{timeout:90000});await capture('crypt-hall');await game.evaluate(()=>{const s=ReferenceWorld.scenes.crypt;route(s.up.x,s.up.y)});await game.waitForFunction(()=>p.z===0,{},{timeout:90000});
   await exterior('harbour',18,59);await doorRoom('BOAT');
+  // The town review deliberately used a new level-one character. The outer
+  // wilderness contains real hostile creatures: prepare the same character
+  // through the existing Quartermaster UI and authoritative purchase/equip
+  // actions before walking to the level-30+ destinations. Do not disable AI,
+  // grant invulnerability, teleport, or patch the character's stats directly.
+  const supplyAt=await game.evaluate(()=>[[0,1],[1,0],[-1,0],[0,-1]].map(([dx,dy])=>({x:testSupplier.x+dx,y:testSupplier.y+dy})).find(q=>walkable(q.x,q.y)&&!occupied(q.x,q.y,0)));
+  assert(supplyAt,'Quartermaster has a reachable approach');await walk(supplyAt.x,supplyAt.y);
+  assert(await game.evaluate(()=>showTestSupplies()));await game.locator('[data-test-level="100"]').click();await game.waitForFunction(()=>p.level===100,{},{timeout:30000});
+  await game.locator('[data-test-supplies="gold"]').click();await game.waitForFunction(()=>p.gold>=10000000,{},{timeout:30000});
+  for(const slot of ['head','armor','legs','mainhand','offhand']){
+   const base='base_testforge_bulwark_'+slot;
+   assert(await game.evaluate(base=>buyNpcOffer('quartermaster',base,'backpack',containerCells('backpack').findIndex(id=>!id)),base));
+   await game.waitForFunction(base=>p.bag.some(id=>items[id]?.baseId===base),base,{timeout:30000});
+   assert(await game.evaluate(({base,slot})=>inventoryEquip(inventoryCells().findIndex(id=>items[id]?.baseId===base),slot),{base,slot}));
+   await game.waitForFunction(({base,slot})=>items[p.equip[slot]]?.baseId===base,{base,slot},{timeout:30000});
+  }
+  await game.locator('#close').click();
+  evidence.wildernessFixture=await game.evaluate(()=>({level:p.level,equipment:Object.fromEntries(Object.entries(p.equip).map(([slot,id])=>[slot,items[id]?.baseId||id])),source:'Existing Quartermaster UI, server-backed purchases and equipment actions; combat remains enabled'}));
   for(const [key,exteriorKey,z]of [['orc','orcExterior',401],['dragon','dragonExterior',402]]){
    const at=await game.evaluate(key=>({x:adventures[key].x,y:adventures[key].y+1}),key);await exterior(exteriorKey,at.x,at.y);await game.evaluate(key=>enterAdventure(key),key);await game.waitForFunction(z=>p.z===z,z,{timeout:30000});await capture(key+'-hall');await game.evaluate(()=>{const s=ReferenceWorld.active();route(s.up.x,s.up.y)});await game.waitForFunction(()=>p.z===0,{},{timeout:90000});
   }

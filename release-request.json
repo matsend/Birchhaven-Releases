@@ -4,8 +4,8 @@
   "name": "Living Grounds",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "94742f22b5439ac5f6d8ffcf7ebdaee8667b88eb99074069e950e3b3a06c9a32",
+  "runtimeSha256": "fb286212effd81e80499cb574dffbb4f611c322a98b43f36b5f84b2973cd2ae3",
   "patch": "release/patches/8.4.0.json",
-  "patchSha256": "d6b34383b15bfa7bca1484be52890fc0ed1f5d22a1afa93ce9562c9897cffb0d",
+  "patchSha256": "491df9e334c4d322f2d82032debb69753e039e4ada981bddef7894f997f663b7",
   "notes": "Added original-pixel fire, water, waterfall, light and small sail/leaf animation masks for the thirteen reference scenes. The churchyard gate opens as the player approaches; brazier occlusion follows tighter silhouettes. Added painted connection strips between church/town and town/harbour while retaining every original image unchanged. Continuous full-scale painted ground replaces compressed tile miniatures; dungeon floor sampling keeps each campaign theme. Private development candidate. Full exterior perimeter integration, all dungeon architecture and installed Windows acceptance are not yet complete."
 }
