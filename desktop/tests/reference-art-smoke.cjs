@@ -2,11 +2,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 module.exports=async function referenceArtSmoke(game,app,output){
  const evidence={status:'awaiting-manual-side-by-side-review',scenes:[],checks:[],limitations:['Thirteen exact reference originals; deeper campaigns are not covered by their acceptance.','Browser resampling, live characters, animated masks and gameplay markers differ from a still reference.','This automated gate does not grant visual acceptance.']};
  const original=await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));return{size:w.getContentSize(),zoom:w.webContents.getZoomFactor()};});
- async function settled(){await game.waitForFunction(()=>started&&!worldPreparation.busy&&ReferenceSceneArt.ready(ReferenceWorld.active()),{},{timeout:90000});await game.waitForTimeout(400);}
+ async function settled(){await game.waitForFunction(()=>started&&!paused()&&worldPve.ready&&!worldPreparation.busy&&ReferenceSceneArt.ready(ReferenceWorld.active()),{},{timeout:90000});await game.waitForTimeout(400);}
  async function walk(x,y){
   console.log('Artwork route',x,y);assert(await game.evaluate(({x,y})=>{if(!walkable(x,y))return false;route(x,y);return true;},{x,y}));
   const deadline=Date.now()+90000;
-  for(;;){const state=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,dead:p.dead,hp:p.hp}));assert(!state.dead,'Review character died on route to '+x+','+y);if(state.x===x&&state.y===y)break;assert(Date.now()<deadline,'Route timed out: '+JSON.stringify({target:{x,y},state}));
+  for(;;){const state=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,dead:p.dead,hp:p.hp,paused:paused(),hidden:document.hidden,ready:worldPve.ready,connection:multiplayer.state,account:window.birchhavenAccountReady(),path:path.slice(0,2),destination:walkController.destination,world:worldPve.state&&{zone:worldPve.state.zone,inside:worldPve.state.inside,revision:worldPve.state.revision}}));assert(!state.dead,'Review character died on route to '+x+','+y);if(state.x===x&&state.y===y)break;assert(Date.now()<deadline,'Route timed out: '+JSON.stringify({target:{x,y},state}));
    if(evidence.wildernessFixture)await game.evaluate(({x,y})=>{if(paused()||casting)return;if(p.hp<maxhp()*.6)castHeal();else if(enemies.some(e=>!e.dead&&e.z===p.z&&dist(p,e)<=1))hit();if(!path.length&&!casting)route(x,y);},{x,y});
    await game.waitForTimeout(500);
   }
@@ -86,6 +86,8 @@ module.exports=async function referenceArtSmoke(game,app,output){
   await walk(22,29);
   evidence.checks.push('Actual installed game screenshots of all thirteen scenes','Original image pixel comparison','Ordinary movement through town, churchyard, harbour, tower and cave approaches','Existing NPC services','Actor behind/in front of anvil','Proximity gate opening','Automatic doors and vestibule return trips');
   console.log('PASS: installed artwork scenes, original-image comparison, real doors, room paths and services. Manual side-by-side acceptance still required.');
+ }catch(error){
+  evidence.failure={message:error.message,state:await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,interior:p.interior,dead:p.dead,hp:p.hp,paused:paused(),hidden:document.hidden,ready:worldPve.ready,connection:multiplayer.state,account:window.birchhavenAccountReady(),path:path.slice(0,3),destination:walkController.destination,world:worldPve.state&&{zone:worldPve.state.zone,inside:worldPve.state.inside,revision:worldPve.state.revision},lastFrame,now:performance.now(),loading:worldPreparation.busy,casting:!!casting,held:[...held.keys()]})).catch(()=>null)};console.error('Artwork diagnostic',JSON.stringify(evidence.failure));throw error;
  }finally{
   await game.evaluate(()=>{if(window.__artReviewCamera){creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;}}).catch(()=>{});
   fs.writeFileSync(path.join(output,'reference-art-verification.json'),JSON.stringify(evidence,null,2));
