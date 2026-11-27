@@ -4,8 +4,8 @@
   "name": "Living Grounds",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "fb286212effd81e80499cb574dffbb4f611c322a98b43f36b5f84b2973cd2ae3",
+  "runtimeSha256": "8ce0511309330d549c64f77ae735c2a3531da542b3cdcbe3274d3631c00830b2",
   "patch": "release/patches/8.4.0.json",
-  "patchSha256": "491df9e334c4d322f2d82032debb69753e039e4ada981bddef7894f997f663b7",
-  "notes": "Added original-pixel fire, water, waterfall, light and small sail/leaf animation masks for the thirteen reference scenes. The churchyard gate opens as the player approaches; brazier occlusion follows tighter silhouettes. Added painted connection strips between church/town and town/harbour while retaining every original image unchanged. Continuous full-scale painted ground replaces compressed tile miniatures; dungeon floor sampling keeps each campaign theme. Private development candidate. Full exterior perimeter integration, all dungeon architecture and installed Windows acceptance are not yet complete."
+  "patchSha256": "d3ca170488cab864e799ef36f373a4dfc4904a9a92dc4223fa48cc5620dca79c",
+  "notes": "Added original-pixel fire, water, waterfall, light and small sail/leaf animation masks for the thirteen reference scenes. The churchyard gate opens as the player approaches; brazier occlusion follows tighter silhouettes. Added painted connection strips between church/town and town/harbour while retaining every original image unchanged. Continuous full-scale painted ground replaces compressed tile miniatures; dungeon floor sampling keeps each campaign theme. Private development candidate. Full exterior perimeter integration, all dungeon architecture and installed Windows acceptance are not yet complete. Refined gravel, rock, shores and woodland trees on the open map and Orc Island. Integrated dragon and tower contours, approach roads and harbour water with the animated coast."
 }
