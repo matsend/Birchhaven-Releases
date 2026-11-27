@@ -24,7 +24,9 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  z.extractall(root)
 `,baseFile,output],{stdio:'inherit'});
 fs.unlinkSync(baseFile);const runtime=path.join(output,'Birchhaven-Singleplayer');
-const patch=readPatch(plan.patch,plan.patchSha256,plan.version);if(patch.version!==plan.version||!Array.isArray(patch.files)||!Array.isArray(patch.remove)||patch.files.length+patch.remove.length>20000)throw Error('Invalid patch');
+if(plan.previousVersion!==undefined&&(!semver(plan.previousVersion)||!hash(plan.previousPatchSha256)||compare(plan.previousVersion,plan.baseVersion)<=0||compare(plan.previousVersion,plan.version)>=0))throw Error('Invalid previous release patch');
+function applyPatch(filename,expectedSha,version){
+const patch=readPatch(filename,expectedSha,version);if(patch.version!==version||!Array.isArray(patch.files)||!Array.isArray(patch.remove)||patch.files.length+patch.remove.length>20000)throw Error('Invalid patch');
 const safe=p=>typeof p==='string'&&p.length<240&&p.split('/').every(x=>/^[a-zA-Z0-9_.@+~-]+$/.test(x)&&!['.','..'].includes(x)&&!/[. ]$/.test(x)&&!/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(x))&&(['dist','scripts','drizzle','docs'].includes(p.split('/')[0])||['local-world.json','LAS-MIG.html','update-version.json'].includes(p));
 const seen=new Set();
 for(const f of [...patch.remove,...patch.files]){
@@ -37,6 +39,9 @@ for(const f of [...patch.remove,...patch.files]){
  if(bytes.length!==f.size||createHash('sha256').update(bytes).digest('hex')!==f.sha256)throw Error('Patch file mismatch');
  fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,bytes);
 }
+}
+if(plan.previousVersion)applyPatch(`release/patches/${plan.previousVersion}.json`,plan.previousPatchSha256,plan.previousVersion);
+applyPatch(plan.patch,plan.patchSha256,plan.version);
 function treeHash(root){const rows=[];function walk(dir,rel=''){for(const item of fs.readdirSync(dir,{withFileTypes:true})){const p=rel?rel+'/'+item.name:item.name;if(item.isDirectory())walk(path.join(dir,item.name),p);else if(item.isFile())rows.push([p,hashFile(path.join(dir,item.name))]);else throw Error('Unsupported runtime entry');}}walk(root);rows.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);return createHash('sha256').update(rows.map(([p,h])=>p+'\0'+h+'\n').join('')).digest('hex');}
 if(treeHash(runtime)!==plan.runtimeSha256)throw Error('Runtime tree checksum mismatch');
 if(JSON.parse(fs.readFileSync(path.join(runtime,'update-version.json'))).version!==plan.version)throw Error('Runtime version mismatch');
