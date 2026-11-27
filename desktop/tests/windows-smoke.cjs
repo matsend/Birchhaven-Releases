@@ -34,7 +34,15 @@ async function play(setup){
 }
 async function close(){
  const done=app.waitForEvent('close',{timeout:180000});
- if(await game.locator('#welcome').isVisible())await game.locator('#exit-welcome').click();else{await game.locator('#settings').click();await game.locator('#exit-game').click();}
+ if(await game.locator('#welcome').isVisible())await game.locator('#exit-welcome').click();else{
+  const dialog=game.locator('#modal[open]');
+  if(await dialog.isVisible()){
+   await dialog.locator('#close').click();
+   await dialog.waitFor({state:'hidden'});
+  }
+  await game.locator('#settings').click();
+  await game.locator('#exit-game').click();
+ }
  await done;app=null;
 }
 async function roster(){return game.evaluate(async()=>{const r=await fetch('/api/player/characters');if(!r.ok)throw Error('Character API failed');return (await r.json()).data;});}
