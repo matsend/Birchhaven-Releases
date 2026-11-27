@@ -1,7 +1,13 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 module.exports=async function fullscreenHudSmoke(game,app,out){
  const measurements=[];
- async function size(width,height,scale=1){await app.evaluate(({BrowserWindow},{width,height,scale})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.unmaximize();w.setContentSize(width,height);w.webContents.setZoomFactor(scale);},{width,height,scale});await game.waitForTimeout(500);}
+ async function size(width,height,scale=1){await app.evaluate(({BrowserWindow},{width,height,scale})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.unmaximize();w.setContentSize(width,height);w.webContents.setZoomFactor(scale);},{width,height,scale});await game.waitForFunction(({width,height,scale})=>{
+  if(Math.abs(innerWidth-width/scale)>=2||Math.abs(innerHeight-height/scale)>=2)return false;
+  const viewport=document.querySelector('.viewport').getBoundingClientRect();
+  const rail=document.querySelector('.hud-rail');
+  const reserve=Math.ceil(viewport.width*(793-(396.5+268*.5))/1983)+10;
+  return parseFloat(getComputedStyle(rail).getPropertyValue('--hud-bottom'))===reserve;
+ },{width,height,scale},{timeout:15000});}
  async function capture(name){const data=await app.evaluate(async({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));return(await w.webContents.capturePage()).toPNG().toString('base64');});fs.writeFileSync(path.join(out,name+'.png'),Buffer.from(data,'base64'));}
  async function measure(label){const m=await game.evaluate(()=>{
   const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
@@ -12,7 +18,7 @@ module.exports=async function fullscreenHudSmoke(game,app,out){
  assert(m.rail.x>=0&&m.rail.right<=m.width+1&&m.rail.y>=0,'HUD stays inside viewport: '+label);
  assert(m.mapLabel.x>=m.rail.x+40&&m.mapToggle.right<=m.rail.right-35,'Map title and toggle clear the leaf corners: '+label);
  const ornamentTop=m.height-m.width*(793-(396.5+268*.5))/1983;
- assert(m.rail.bottom<=ornamentTop-7,'All bags stop above the energy ornament: '+label);
+ assert(m.rail.bottom<=ornamentTop-7,'All bags stop above the energy ornament: '+JSON.stringify({label,railBottom:m.rail.bottom,ornamentTop,width:m.width,height:m.height}));
  if(!m.minimized)assert(Math.abs(m.map.w-m.map.h)<1,'Map remains square: '+label);
  return m;
  }
