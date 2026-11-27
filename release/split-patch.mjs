@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export function splitPatch(input, directory) {
   const bytes = fs.readFileSync(input);
-  if (bytes.length > 40 * 1024 * 1024) throw Error('Patch exceeds 40 MiB');
+  if (bytes.length > 96 * 1024 * 1024) throw Error('Patch exceeds 96 MiB');
   const patch = JSON.parse(bytes);
   if (!/^\d+\.\d+\.\d+$/.test(patch.version) || !Array.isArray(patch.files) || !Array.isArray(patch.remove)) throw Error('Expected an ordinary release patch');
   fs.mkdirSync(directory, {recursive:true});

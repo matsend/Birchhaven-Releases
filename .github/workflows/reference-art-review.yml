@@ -1,7 +1,7 @@
 name: Review Birchhaven reference artwork
 on:
   push:
-    branches: [review/reference-art-8-2-0]
+    branches: [review/living-grounds-8-4-0]
 concurrency:
   group: birchhaven-reference-art-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}

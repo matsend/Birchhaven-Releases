@@ -3,7 +3,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const maxPatchBytes = 40 * 1024 * 1024;
+const maxPatchBytes = 96 * 1024 * 1024;
 // Parts are repository-local, bounded and individually verified before joining.
 // The resulting delta retains the same per-file and final-runtime checks.
 export function readPatch(filename, expectedHash, version) {
@@ -11,7 +11,7 @@ export function readPatch(filename, expectedHash, version) {
   if (indexBytes.length > maxPatchBytes || hash(indexBytes) !== expectedHash) throw Error('Patch checksum mismatch');
   const index = JSON.parse(indexBytes);
   if (index.format !== 2) return index;
-  if (index.version !== version || !Array.isArray(index.parts) || !index.parts.length || index.parts.length > 320 ||
+  if (index.version !== version || !Array.isArray(index.parts) || !index.parts.length || index.parts.length > 768 ||
       !Number.isSafeInteger(index.size) || index.size <= 0 || index.size > maxPatchBytes || !/^[a-f0-9]{64}$/.test(index.sha256)) throw Error('Invalid multipart patch');
   const parts = [];
   let total = 0;
@@ -30,3 +30,4 @@ export function readPatch(filename, expectedHash, version) {
   if (patch.version !== version) throw Error('Patch version mismatch');
   return patch;
 }
+

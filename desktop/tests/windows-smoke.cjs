@@ -3,7 +3,8 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const repo=path.resolve(__dirname,'../..'),temp=path.join(process.env.RUNNER_TEMP||repo,'BirchhavenClientTest'),install=path.join(temp,'Installed'),data=path.join(temp,'Player Data'),old=path.join(temp,'Old Game');
 const version=require('../package.json').version,installer=path.join(repo,'output/desktop',`Birchhaven-Setup-${version}-x64.exe`),exe=path.join(install,'Birchhaven.exe');
 fs.mkdirSync(temp,{recursive:true});const screenshotDir=path.join(repo,'output/desktop-evidence');fs.mkdirSync(screenshotDir,{recursive:true});
-let app,game,testFailed=false;const errors=[];
+let app,game,testFailed=false;const errors=[],connectionTrace=[];
+function trace(entry){connectionTrace.push({time:new Date().toISOString(),...entry});if(connectionTrace.length>250)connectionTrace.shift();}
 function installClient(){execFileSync(installer,['/S','/D='+install],{timeout:180000,stdio:'inherit'});assert(fs.existsSync(exe),'Installer must create Birchhaven.exe');for(const name of ['node/node.exe','node/msvcp140.dll','runtime/node_modules/wrangler/bin/wrangler.js','runtime/node_modules/@cloudflare/workerd-windows-64/bin/workerd.exe'])assert(fs.existsSync(path.join(install,'resources',name)),'Installed runtime missing '+name);}
 async function launch(){
  app=await electron.launch({executablePath:exe,env:{...process.env,CI:'true',BIRCHHAVEN_TEST_USER_DATA:data},timeout:60000});
@@ -22,6 +23,7 @@ async function play(setup){
  if(!game)throw Error('The installed game window did not open within 180 seconds');
  await game.waitForURL('http://localhost:8787/**',{timeout:180000});
  game.on('pageerror',e=>errors.push(e.message));
+ game.on('websocket',ws=>{trace({event:'socket-open'});ws.on('close',()=>trace({event:'socket-close'}));ws.on('socketerror',error=>trace({event:'socket-error',error}));for(const event of ['framesent','framereceived'])ws.on(event,frame=>{try{const d=JSON.parse(String(frame.payload));if(['position','positioned','position-rejected','joined','pve-result'].includes(d.type))trace({event,type:d.type,seq:d.seq,visible:d.visible,z:d.z,interior:d.interior,x:d.x,y:d.y,ok:d.ok,reason:d.reason});}catch{}});});
  for(let i=0;i<240;i++){const shown=await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().some(w=>w.webContents.getURL().startsWith('http://localhost:8787')&&w.isVisible()));if(shown)break;if(i===239)throw Error('Game window never became visible');await new Promise(r=>setTimeout(r,500));}
  await game.locator('#createcharacter').waitFor({state:'visible',timeout:180000});
  await game.waitForFunction(()=>typeof window.flushPlayerAccount==='function'&&window.BIRCHHAVEN_SINGLEPLAYER===true);
@@ -81,7 +83,7 @@ async function roster(){return game.evaluate(async()=>{const r=await fetch('/api
  fs.writeFileSync(path.join(screenshotDir,'verification.json'),JSON.stringify({version,platform:process.platform,checks:['rendered world','display resolution and scale','automatic display rollback','display preferences survive reinstall','NSIS installation','bundled Node and runtime','sandboxed game window','create character','F11 fullscreen','save and graceful close','reinstall preserving saves','native import picker','old save unchanged','world draft persistence'],rendererErrors:errors},null,2));
  console.log('PASS: installed Windows client, own game window, save, restart, reinstall and import.');
 }catch(error){
- testFailed=true;console.error('WINDOWS CLIENT FAILURE',error);
+ testFailed=true;console.error('WINDOWS CLIENT FAILURE',error);console.error('RENDERER ERRORS',JSON.stringify(errors));fs.writeFileSync(path.join(screenshotDir,'connection-trace.json'),JSON.stringify(connectionTrace,null,2));console.error('RECENT CONNECTION TRACE',JSON.stringify(connectionTrace.slice(-30)));
  if(app)for(const [i,page] of app.windows().entries()){try{console.error('WINDOW',i,page.url(),(await page.locator('body').innerText()).slice(0,5000));await page.screenshot({path:path.join(screenshotDir,'failure-'+i+'.png')});}catch{}}
  throw error;
 }finally{const log=path.join(data,'desktop.log');if(fs.existsSync(log)){fs.copyFileSync(log,path.join(screenshotDir,'desktop.log'));if(testFailed||errors.length)console.error(fs.readFileSync(log,'utf8').slice(-12000));}if(app)await app.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

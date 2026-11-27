@@ -1,10 +1,22 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 module.exports=async function referenceArtSmoke(game,app,output){
- const evidence={status:'awaiting-manual-side-by-side-review',scenes:[],checks:[],limitations:['Exact originals exist for town, blacksmith and inn only.','Browser resampling, live characters and gameplay markers differ from a still reference.','This automated gate does not grant visual acceptance.']};
+ const evidence={status:'awaiting-manual-side-by-side-review',scenes:[],checks:[],limitations:['Thirteen exact reference originals; deeper campaigns are not covered by their acceptance.','Browser resampling, live characters, animated masks and gameplay markers differ from a still reference.','This automated gate does not grant visual acceptance.']};
  const original=await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));return{size:w.getContentSize(),zoom:w.webContents.getZoomFactor()};});
- async function settled(){await game.waitForFunction(()=>started&&!worldPreparation.busy&&ReferenceSceneArt.ready(ReferenceWorld.active()),{},{timeout:90000});await game.waitForTimeout(400);}
- async function walk(x,y){assert(await game.evaluate(({x,y})=>{if(!walkable(x,y))return false;route(x,y);return true;},{x,y}));await game.waitForFunction(({x,y})=>p.x===x&&p.y===y,{x,y},{timeout:90000});await settled();}
- async function capture(label){
+ async function resizeForReview(size){
+  await app.evaluate(({BrowserWindow},size)=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setContentSize(...size);},size);
+  await game.waitForFunction(([width,height])=>innerWidth===width&&innerHeight===height,size);
+ }
+ async function settled(){await game.waitForFunction(()=>started&&!paused()&&worldPve.ready&&!worldPreparation.busy&&ReferenceSceneArt.ready(ReferenceWorld.active()),{},{timeout:90000});await game.waitForTimeout(400);}
+ async function walk(x,y){
+  console.log('Artwork route',x,y);assert(await game.evaluate(({x,y})=>{if(!walkable(x,y))return false;route(x,y);return true;},{x,y}));
+  const deadline=Date.now()+90000;
+  for(;;){const state=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,dead:p.dead,hp:p.hp,paused:paused(),hidden:document.hidden,ready:worldPve.ready,connection:multiplayer.state,account:window.birchhavenAccountReady(),path:path.slice(0,2),destination:walkController.destination,world:worldPve.state&&{zone:worldPve.state.zone,inside:worldPve.state.inside,revision:worldPve.state.revision}}));assert(!state.dead,'Review character died on route to '+x+','+y);if(state.x===x&&state.y===y)break;assert(Date.now()<deadline,'Route timed out: '+JSON.stringify({target:{x,y},state}));
+   if(evidence.wildernessFixture)await game.evaluate(({x,y})=>{if(paused()||casting)return;if(p.hp<maxhp()*.6)castHeal();else if(enemies.some(e=>!e.dead&&e.z===p.z&&dist(p,e)<=1))hit();if(!path.length&&!casting)route(x,y);},{x,y});
+   await game.waitForTimeout(500);
+  }
+  await settled();
+ }
+ async function captureAtReviewSize(label){
   await settled();await game.screenshot({path:path.join(output,'art-'+label+'-game.png')});
   const result=await game.evaluate(()=>{
    const s=ReferenceWorld.active(),sx=(s.x-Math.floor(view.x))*renderPixelScaleX,sy=(s.y-Math.floor(view.y))*renderPixelScaleY,sw=1536*s.scale*renderPixelScaleX,sh=1024*s.scale*renderPixelScaleY;
@@ -18,9 +30,15 @@ module.exports=async function referenceArtSmoke(game,app,output){
   fs.writeFileSync(path.join(output,'art-'+label+'-scene.png'),Buffer.from(result.png.split(',')[1],'base64'));delete result.png;evidence.scenes.push({label,...result});
   assert(result.meanRGBDifference<7&&result.changedFraction<.07,JSON.stringify(result));
  }
+ async function capture(label){
+  // The larger viewport captures the full artwork. Travel uses the ordinary
+  // game window so rendering a review frame cannot consume movement timeouts.
+  await resizeForReview([2560,1920]);
+  try{await captureAtReviewSize(label);}finally{await resizeForReview(original.size);}
+ }
  try{
-  await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.unmaximize();w.webContents.setZoomFactor(1);w.setContentSize(2560,1920);});
-  await game.waitForFunction(()=>innerWidth===2560&&innerHeight===1920);
+  await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().startsWith('http://localhost:8787'));w.setFullScreen(false);w.unmaximize();w.webContents.setZoomFactor(1);});
+  await resizeForReview(original.size);
   assert(await game.evaluate(()=>p.z===0),'Art review starts in the real town session');
   // Review camera only: the actor, server session, collisions, rendering and
   // loaded original assets remain the real installed game. No image is substituted.
@@ -28,6 +46,22 @@ module.exports=async function referenceArtSmoke(game,app,output){
   await capture('town');await game.evaluate(()=>{creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;});
   for(const key of ['BLACKSMITH','INN']){
    const door=await game.evaluate(key=>({...buildings.find(b=>b.name===key).door}),key);
+   if(key==='INN'){
+    const waitsForPatrol=await game.evaluate(({x,y})=>{
+     const previous={x:tokNPC.x,y:tokNPC.y};
+     // This tile can be the sole passage after returning from the smithy.
+     Object.assign(tokNPC,{x:27,y:29});
+     try{
+      route(x,y);
+      const target=walkController.destination;
+      return target?.x===x&&target.y===y&&path.some(([px,py])=>px===27&&py===29);
+     }finally{
+      Object.assign(tokNPC,previous);
+      walkController.cancel();
+     }
+    },door);
+    assert(waitsForPatrol,'Inn route survives Tokboffe blocking the passage');
+   }
    const routed=await game.evaluate(({x,y})=>{
     route(x,y);
     const otherDoors=new Set(buildings.filter(b=>b.door.x!==x||b.door.y!==y).map(b=>b.door.x+','+b.door.y));
@@ -46,8 +80,59 @@ module.exports=async function referenceArtSmoke(game,app,output){
    }
    await game.evaluate(()=>route(7,11));await game.waitForFunction(()=>p.z===0&&!p.interior,{},{timeout:90000});await settled();
   }
-  evidence.checks.push('Actual installed game screenshots','Original image pixel comparison','Ordinary route movement into and out of both buildings','Existing NPC services','Actor behind/in front of anvil');
+  // Exercise the expansion through real routes and automatic doors. No
+  // screenshot substitute, actor teleport or disabled server authority.
+  async function exterior(key,x,y){await walk(x,y);await game.screenshot({path:path.join(output,'art-'+key+'-ordinary-camera.png')});await game.evaluate(key=>{window.__artReviewCamera=creatorCamera;creatorCamera=()=>{const s=ReferenceWorld.scenes[key];return{x:(s.x+768*s.scale-24)/T,y:(s.y+512*s.scale-24)/T};};},key);try{await capture(key);}finally{await game.evaluate(()=>{creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;});}}
+  async function doorRoom(key){
+   await game.evaluate(key=>{const b=buildings.find(b=>b.name===key);route(b.door.x,b.door.y);},key);
+   await game.waitForFunction(key=>p.z===3&&p.interior===key,key,{timeout:90000});
+   await settled();
+   if(key==='CHURCH'){
+    await walk(2,7);
+    await walk(12,7);
+   }
+   if(key==='BOAT'){
+    await walk(9,6);
+    await walk(1,3);
+   }
+   await capture(key.toLowerCase());
+   await game.evaluate(()=>route(7,11));
+   await game.waitForFunction(()=>p.z===0&&!p.interior,{},{timeout:90000});
+   await settled();
+  }
+  const cd=await game.evaluate(()=>({...churchBuilding.door}));await exterior('churchExterior',cd.x,cd.y+1);await doorRoom('CHURCH');
+  await exterior('cemetery',55,18);assert(await game.evaluate(()=>ReferenceMotion.gateAmount>.9),'churchyard gate opens before passage');
+  await game.evaluate(()=>route(stairsSurface.x,stairsSurface.y));await game.waitForFunction(()=>p.z===400,{},{timeout:90000});await capture('crypt-hall');await game.evaluate(()=>{const s=ReferenceWorld.scenes.crypt;route(s.up.x,s.up.y)});await game.waitForFunction(()=>p.z===0,{},{timeout:90000});
+  // Follow the settlement streets back from the churchyard before crossing
+  // to the harbour. A direct route cuts through the hostile eastern verge.
+  await walk(22,29);
+  await exterior('harbour',18,59);await doorRoom('BOAT');
+  // The town review deliberately used a new level-one character. The outer
+  // wilderness contains real hostile creatures: prepare the same character
+  // through the existing Quartermaster UI and authoritative purchase/equip
+  // actions before walking to the level-30+ destinations. Do not disable AI,
+  // grant invulnerability, teleport, or patch the character's stats directly.
+  const supplyAt=await game.evaluate(()=>[[0,1],[1,0],[-1,0],[0,-1]].map(([dx,dy])=>({x:testSupplier.x+dx,y:testSupplier.y+dy})).find(q=>walkable(q.x,q.y)&&!occupied(q.x,q.y,0)));
+  assert(supplyAt,'Quartermaster has a reachable approach');await walk(supplyAt.x,supplyAt.y);
+  assert(await game.evaluate(()=>showTestSupplies()));await game.locator('[data-test-level="100"]').click();await game.waitForFunction(()=>p.level===100,{},{timeout:30000});
+  await game.locator('[data-test-supplies="gold"]').click();await game.waitForFunction(()=>p.gold>=10000000,{},{timeout:30000});
+  for(const slot of ['head','armor','legs','mainhand','offhand']){
+   const base='base_testforge_bulwark_'+slot;
+   assert(await game.evaluate(base=>buyNpcOffer('quartermaster',base,'backpack',containerCells('backpack').findIndex(id=>!id)),base));
+   await game.waitForFunction(base=>p.bag.some(id=>items[id]?.baseId===base),base,{timeout:30000});
+   assert(await game.evaluate(({base,slot})=>inventoryEquip(inventoryCells().findIndex(id=>items[id]?.baseId===base),slot),{base,slot}));
+   await game.waitForFunction(({base,slot})=>items[p.equip[slot]]?.baseId===base,{base,slot},{timeout:30000});
+  }
+  await game.locator('#close').click();
+  evidence.wildernessFixture=await game.evaluate(()=>({level:p.level,equipment:Object.fromEntries(Object.entries(p.equip).map(([slot,id])=>[slot,items[id]?.baseId||id])),source:'Existing Quartermaster UI, server-backed purchases and equipment actions; combat remains enabled'}));
+  for(const [key,exteriorKey,z]of [['orc','orcExterior',401],['dragon','dragonExterior',402]]){
+   const at=await game.evaluate(key=>({x:adventures[key].x,y:adventures[key].y+1}),key);await exterior(exteriorKey,at.x,at.y);await game.evaluate(key=>enterAdventure(key),key);await game.waitForFunction(z=>p.z===z,z,{timeout:30000});await capture(key+'-hall');await game.evaluate(()=>{const s=ReferenceWorld.active();route(s.up.x,s.up.y)});await game.waitForFunction(()=>p.z===0,{},{timeout:90000});
+  }
+  await walk(22,29);
+  evidence.checks.push('Actual installed game screenshots of all thirteen scenes','Original image pixel comparison','Ordinary movement through town, churchyard, harbour, tower and cave approaches','Existing NPC services','Actor behind/in front of anvil','Proximity gate opening','Automatic doors and vestibule return trips');
   console.log('PASS: installed artwork scenes, original-image comparison, real doors, room paths and services. Manual side-by-side acceptance still required.');
+ }catch(error){
+  evidence.failure={message:error.message,state:await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,interior:p.interior,dead:p.dead,hp:p.hp,paused:paused(),hidden:document.hidden,ready:worldPve.ready,connection:multiplayer.state,account:window.birchhavenAccountReady(),path:path.slice(0,3),destination:walkController.destination,world:worldPve.state&&{zone:worldPve.state.zone,inside:worldPve.state.inside,revision:worldPve.state.revision},lastFrame,now:performance.now(),loading:worldPreparation.busy,casting:!!casting,held:[...held.keys()]})).catch(()=>null)};console.error('Artwork diagnostic',JSON.stringify(evidence.failure));throw error;
  }finally{
   await game.evaluate(()=>{if(window.__artReviewCamera){creatorCamera=window.__artReviewCamera;delete window.__artReviewCamera;}}).catch(()=>{});
   fs.writeFileSync(path.join(output,'reference-art-verification.json'),JSON.stringify(evidence,null,2));
