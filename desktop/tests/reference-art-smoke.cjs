@@ -23,9 +23,21 @@ module.exports=async function referenceArtSmoke(game,app,output){
    if(sx<0||sy<0||sx+sw>C.width||sy+sh>C.height)throw Error('Artwork crop is outside the actual rendered game canvas');
    const shot=document.createElement('canvas');shot.width=1536;shot.height=1024;const c=shot.getContext('2d');c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(C,sx,sy,sw,sh,0,0,1536,1024);
    const ref=document.createElement('canvas');ref.width=1536;ref.height=1024;const rc=ref.getContext('2d');rc.drawImage(ReferenceSceneArt.images.get(s.id),0,0);
+   const integrated=typeof LandscapeEdge!=='undefined'&&LandscapeEdge.shapes[s.id];
+   if(integrated){
+    // Compare the opaque painted scenery and shared water to their rendered
+    // layers. The feathered perimeter can contain live terrain and actors.
+    rc.clearRect(0,0,1536,1024);
+    LandscapeEdge.draw(rc,s,ReferenceSceneArt.images.get(s.id),0,0);
+   }
    const a=c.getImageData(0,0,1536,1024).data,b=rc.getImageData(0,0,1536,1024).data;let sum=0,changed=0,count=0;
-   for(let i=0;i<a.length;i+=16){const delta=(Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]))/3;sum+=delta;if(delta>40)changed++;count++;}
-   return{id:s.id,position:{x:p.x,y:p.y,z:p.z,interior:p.interior},sourceRect:{sx,sy,sw,sh},canvasSize:{width:C.width,height:C.height},viewport:{width:innerWidth,height:innerHeight},meanRGBDifference:sum/count,changedFraction:changed/count,png:shot.toDataURL('image/png')};
+   for(let i=0;i<a.length;i+=16){
+    if(integrated&&b[i+3]<252)continue;
+    const delta=(Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]))/3;sum+=delta;if(delta>40)changed++;count++;
+   }
+   const referenceCoverage=count/(a.length/16);
+   if(referenceCoverage<.60)throw Error('Scene reference covers too little of the frame: '+s.id+' '+referenceCoverage);
+   return{id:s.id,position:{x:p.x,y:p.y,z:p.z,interior:p.interior},sourceRect:{sx,sy,sw,sh},canvasSize:{width:C.width,height:C.height},viewport:{width:innerWidth,height:innerHeight},referenceCoverage,meanRGBDifference:sum/count,changedFraction:changed/count,png:shot.toDataURL('image/png')};
   });
   fs.writeFileSync(path.join(output,'art-'+label+'-scene.png'),Buffer.from(result.png.split(',')[1],'base64'));delete result.png;evidence.scenes.push({label,...result});
   assert(result.meanRGBDifference<7&&result.changedFraction<.07,JSON.stringify(result));
@@ -129,7 +141,7 @@ module.exports=async function referenceArtSmoke(game,app,output){
    const at=await game.evaluate(key=>({x:adventures[key].x,y:adventures[key].y+1}),key);await exterior(exteriorKey,at.x,at.y);await game.evaluate(key=>enterAdventure(key),key);await game.waitForFunction(z=>p.z===z,z,{timeout:30000});await capture(key+'-hall');await game.evaluate(()=>{const s=ReferenceWorld.active();route(s.up.x,s.up.y)});await game.waitForFunction(()=>p.z===0,{},{timeout:90000});
   }
   await walk(22,29);
-  evidence.checks.push('Actual installed game screenshots of all thirteen scenes','Original image pixel comparison','Ordinary movement through town, churchyard, harbour, tower and cave approaches','Existing NPC services','Actor behind/in front of anvil','Proximity gate opening','Automatic doors and vestibule return trips');
+  evidence.checks.push('Actual installed game screenshots of all thirteen scenes','Pixel comparison against original artwork and composed exterior layers','Ordinary movement through town, churchyard, harbour, tower and cave approaches','Existing NPC services','Actor behind/in front of anvil','Proximity gate opening','Automatic doors and vestibule return trips');
   console.log('PASS: installed artwork scenes, original-image comparison, real doors, room paths and services. Manual side-by-side acceptance still required.');
  }catch(error){
   evidence.failure={message:error.message,state:await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,interior:p.interior,dead:p.dead,hp:p.hp,paused:paused(),hidden:document.hidden,ready:worldPve.ready,connection:multiplayer.state,account:window.birchhavenAccountReady(),path:path.slice(0,3),destination:walkController.destination,world:worldPve.state&&{zone:worldPve.state.zone,inside:worldPve.state.inside,revision:worldPve.state.revision},lastFrame,now:performance.now(),loading:worldPreparation.busy,casting:!!casting,held:[...held.keys()]})).catch(()=>null)};console.error('Artwork diagnostic',JSON.stringify(evidence.failure));throw error;
