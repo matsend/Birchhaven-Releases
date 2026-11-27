@@ -1,11 +1,13 @@
 {
   "format": 1,
-  "version": "8.4.0",
-  "name": "Living Grounds",
+  "version": "8.4.1",
+  "name": "Connected Shores",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "8ce0511309330d549c64f77ae735c2a3531da542b3cdcbe3274d3631c00830b2",
-  "patch": "release/patches/8.4.0.json",
-  "patchSha256": "d3ca170488cab864e799ef36f373a4dfc4904a9a92dc4223fa48cc5620dca79c",
-  "notes": "Added original-pixel fire, water, waterfall, light and small sail/leaf animation masks for the thirteen reference scenes. The churchyard gate opens as the player approaches; brazier occlusion follows tighter silhouettes. Added painted connection strips between church/town and town/harbour while retaining every original image unchanged. Continuous full-scale painted ground replaces compressed tile miniatures; dungeon floor sampling keeps each campaign theme. Private development candidate. Full exterior perimeter integration, all dungeon architecture and installed Windows acceptance are not yet complete. Refined gravel, rock, shores and woodland trees on the open map and Orc Island. Integrated dragon and tower contours, approach roads and harbour water with the animated coast."
+  "runtimeSha256": "abe578180e393a31063b4ab48e0fc41527d8ef3891190865886ef162eb82b01d",
+  "patch": "release/patches/8.4.1.json",
+  "patchSha256": "6072cf6c43ade8b0eba5de684525c87be0a4ac04c01a64e317c4c9c1defe78f6",
+  "notes": "Rebuilt the town-to-harbour quay connection and blended the northern churchyard into the surrounding shore. Rounded the remaining coastal transitions without moving the editable or walkable tiles.",
+  "previousVersion": "8.4.0",
+  "previousPatchSha256": "d3ca170488cab864e799ef36f373a4dfc4904a9a92dc4223fa48cc5620dca79c"
 }
