@@ -1,13 +1,13 @@
 {
   "format": 1,
-  "version": "8.4.1",
-  "name": "Connected Shores",
+  "version": "8.4.2",
+  "name": "Coastal Details",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "abe578180e393a31063b4ab48e0fc41527d8ef3891190865886ef162eb82b01d",
-  "patch": "release/patches/8.4.1.json",
-  "patchSha256": "6072cf6c43ade8b0eba5de684525c87be0a4ac04c01a64e317c4c9c1defe78f6",
-  "notes": "Rebuilt the town-to-harbour quay connection and blended the northern churchyard into the surrounding shore. Rounded the remaining coastal transitions without moving the editable or walkable tiles.",
+  "runtimeSha256": "c537bc801807eeb37bf70f6dd9b7f4751e3062106e4b12fb71fa0217d2a9c3d8",
+  "patch": "release/patches/8.4.2.json",
+  "patchSha256": "4a92cd22eed95ff10661b71305dce9ec049255dac8a916210063ab4841eb8283",
+  "notes": "Added eastern and western quay corner stones, a connected dragon shore rock face and varied northern foliage. Blended both gate roads into gravel and softened painted pier reflections.",
   "previousVersion": "8.4.0",
   "previousPatchSha256": "d3ca170488cab864e799ef36f373a4dfc4904a9a92dc4223fa48cc5620dca79c"
 }
