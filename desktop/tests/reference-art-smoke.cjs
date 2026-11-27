@@ -9,8 +9,12 @@ module.exports=async function referenceArtSmoke(game,app,output){
  async function settled(){await game.waitForFunction(()=>started&&!paused()&&worldPve.ready&&!worldPreparation.busy&&ReferenceSceneArt.ready(ReferenceWorld.active()),{},{timeout:90000});await game.waitForTimeout(400);}
  async function walk(x,y){
   console.log('Artwork route',x,y);assert(await game.evaluate(({x,y})=>{if(!walkable(x,y))return false;route(x,y);return true;},{x,y}));
-  const deadline=Date.now()+90000;
-  for(;;){const state=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,dead:p.dead,hp:p.hp,paused:paused(),hidden:document.hidden,ready:worldPve.ready,connection:multiplayer.state,account:window.birchhavenAccountReady(),path:path.slice(0,2),destination:walkController.destination,world:worldPve.state&&{zone:worldPve.state.zone,inside:worldPve.state.inside,revision:worldPve.state.revision}}));assert(!state.dead,'Review character died on route to '+x+','+y);if(state.x===x&&state.y===y)break;assert(Date.now()<deadline,'Route timed out: '+JSON.stringify({target:{x,y},state}));
+  const deadline=Date.now()+180000;
+  let lastPosition, stalledAt=Date.now();
+  for(;;){const state=await game.evaluate(()=>({x:p.x,y:p.y,z:p.z,dead:p.dead,hp:p.hp,paused:paused(),hidden:document.hidden,ready:worldPve.ready,connection:multiplayer.state,account:window.birchhavenAccountReady(),path:path.slice(0,2),destination:walkController.destination,world:worldPve.state&&{zone:worldPve.state.zone,inside:worldPve.state.inside,revision:worldPve.state.revision}}));assert(!state.dead,'Review character died on route to '+x+','+y);if(state.x===x&&state.y===y)break;
+   const position=state.x+','+state.y+','+state.z;
+   if(lastPosition!==position){lastPosition=position;stalledAt=Date.now();}
+   assert(Date.now()<deadline&&Date.now()-stalledAt<30000,'Route timed out: '+JSON.stringify({target:{x,y},state}));
    if(evidence.wildernessFixture)await game.evaluate(({x,y})=>{if(paused()||casting)return;if(p.hp<maxhp()*.6)castHeal();else if(enemies.some(e=>!e.dead&&e.z===p.z&&dist(p,e)<=1))hit();if(!path.length&&!casting)route(x,y);},{x,y});
    await game.waitForTimeout(500);
   }
