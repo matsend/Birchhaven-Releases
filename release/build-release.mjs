@@ -3,7 +3,7 @@ import {packBundle,hashFile} from './bundle.mjs';
 import {readPatch} from './read-patch.mjs';
 const plan=JSON.parse(fs.readFileSync('release-request.json','utf8'));
 const semver=v=>/^\d+\.\d+\.\d+$/.test(v),hash=v=>/^[a-f0-9]{64}$/.test(v);
-if(plan.format!==1||!semver(plan.version)||!semver(plan.baseVersion)||!hash(plan.baseSha256)||!hash(plan.runtimeSha256)||!hash(plan.patchSha256)||plan.patch!==`release/patches/${plan.version}.json`)throw Error('Invalid release request');
+if(plan.format!==1||!semver(plan.version)||!semver(plan.baseVersion)||!hash(plan.baseSha256)||!hash(plan.runtimeSha256)||!hash(plan.patchSha256)||plan.patch!==`release/patches/${plan.restoreVersion??plan.version}.json`)throw Error('Invalid release request');
 const compare=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);for(let i=0;i<3;i++)if(x[i]!==y[i])return x[i]-y[i];return 0};if(compare(plan.version,plan.baseVersion)<=0)throw Error('Release must be newer');
 const output=path.resolve('output');if(fs.existsSync(output))throw Error('Use a clean output directory');fs.mkdirSync(output);
 const baseFile=path.join(output,'base.zip');const supplied=process.argv[2];
@@ -41,10 +41,24 @@ for(const f of [...patch.remove,...patch.files]){
 }
 }
 if(plan.previousVersion)applyPatch(`release/patches/${plan.previousVersion}.json`,plan.previousPatchSha256,plan.previousVersion);
-applyPatch(plan.patch,plan.patchSha256,plan.version);
+const sourceVersion=plan.restoreVersion??plan.version;
+if(!semver(sourceVersion)||plan.restoreVersion!==undefined&&(plan.previousVersion||compare(sourceVersion,plan.baseVersion)<=0||compare(sourceVersion,plan.version)>=0))throw Error('Invalid restoration source');
+applyPatch(plan.patch,plan.patchSha256,sourceVersion);
 function treeHash(root){const rows=[];function walk(dir,rel=''){for(const item of fs.readdirSync(dir,{withFileTypes:true})){const p=rel?rel+'/'+item.name:item.name;if(item.isDirectory())walk(path.join(dir,item.name),p);else if(item.isFile())rows.push([p,hashFile(path.join(dir,item.name))]);else throw Error('Unsupported runtime entry');}}walk(root);rows.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);return createHash('sha256').update(rows.map(([p,h])=>p+'\0'+h+'\n').join('')).digest('hex');}
 if(treeHash(runtime)!==plan.runtimeSha256)throw Error('Runtime tree checksum mismatch');
-if(JSON.parse(fs.readFileSync(path.join(runtime,'update-version.json'))).version!==plan.version)throw Error('Runtime version mismatch');
+const versionFile=path.join(runtime,'update-version.json');
+const versionData=JSON.parse(fs.readFileSync(versionFile,'utf8'));
+if(versionData.version!==sourceVersion)throw Error('Runtime version mismatch');
+if(plan.restoreVersion!==undefined){
+ const clientVersionFile=path.join(runtime,'dist/client/version.js');
+ const original=fs.readFileSync(clientVersionFile,'utf8');
+ const historyStart='const releaseHistory=Object.freeze([';
+ const anchor=historyStart+'{"version":"'+sourceVersion+'"';
+ if(!original.includes(anchor))throw Error('Client version history mismatch');
+ const entry={version:plan.version,name:plan.name,changes:{World:[plan.notes]}};
+ fs.writeFileSync(clientVersionFile,original.replace(anchor,()=>historyStart+JSON.stringify(entry)+','+anchor.slice(historyStart.length)));
+ fs.writeFileSync(versionFile,JSON.stringify({...versionData,version:plan.version},null,2)+'\n');
+}
 const archive=path.join(output,`Birchhaven-Singleplayer-${plan.version}.zip`);
 execFileSync('python3',['-c',`import sys,pathlib,zipfile
 root=pathlib.Path(sys.argv[1])
