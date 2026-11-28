@@ -1,13 +1,12 @@
 {
   "format": 1,
-  "version": "8.4.2",
-  "name": "Coastal Details",
+  "version": "8.4.3",
+  "name": "Restored Streets",
   "baseVersion": "7.22.2",
   "baseSha256": "8c12fe53ffa4f417a2f0250a3d95e0003e24353637cbd7edab0adb922b34e363",
-  "runtimeSha256": "c537bc801807eeb37bf70f6dd9b7f4751e3062106e4b12fb71fa0217d2a9c3d8",
-  "patch": "release/patches/8.4.2.json",
-  "patchSha256": "4a92cd22eed95ff10661b71305dce9ec049255dac8a916210063ab4841eb8283",
-  "notes": "Added eastern and western quay corner stones, a connected dragon shore rock face and varied northern foliage. Blended both gate roads into gravel and softened painted pier reflections.",
-  "previousVersion": "8.4.0",
-  "previousPatchSha256": "d3ca170488cab864e799ef36f373a4dfc4904a9a92dc4223fa48cc5620dca79c"
+  "runtimeSha256": "a46216362b070a609edbb5308cff160f9d3e868d89aaca23dc72756565d9e2c5",
+  "patch": "release/patches/8.1.0.json",
+  "patchSha256": "ae4fbebc2a3fb9a0567dfb8514729a49965ba18819026495c63616ab0df5acda",
+  "notes": "Restored the original artwork and walkable map from before the town square redesign.",
+  "restoreVersion": "8.1.0"
 }

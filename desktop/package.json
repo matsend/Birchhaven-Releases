@@ -1,7 +1,7 @@
 {
   "name": "birchhaven-desktop",
   "productName": "Birchhaven",
-  "version": "8.4.2",
+  "version": "8.4.3",
   "description": "Birchhaven Windows client",
   "author": "Birchhaven",
   "private": true,
